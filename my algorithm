@@ -67,7 +67,7 @@ unordered_set<int> seedSelection(DirectedGraph G, unsigned int numberOfSeeds) {
 		//最大值存到seeds
 		seeds.insert(nodes.at(maxNode));
 		tmp.push_back(nodes.at(maxNode));
-		//後面想法 前面座兩層 所以其他seeds不可能取原點和第一層 一個不行 一個她媽超白癡
+		//後面想法 前面座兩層 所以其他seeds不可能取原點和第一層 
 		for (unsigned j = 0; j < tmp.size(); j++) {
 			G.deleteNode(tmp.at(j));
 		}
