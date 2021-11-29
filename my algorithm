@@ -8,17 +8,23 @@ unordered_set<int> seedSelection(DirectedGraph G, unsigned int numberOfSeeds) {
 	unordered_set<int> seeds;
 	/* Put selected users into unordered_set seeds */
 	/* Implement your seed selection algorithm below */
+	//想法：先簡化問題 
+	//1.把不會一次通過的edge刪掉(剩下的edge只要有指向別的node就能activate)
+	//2.把指向node數太少的node刪掉
+	//3.透過迴圈篩選出 能activate最多人的node(還沒決定要用幾層)
+
+	//先取得所有的edge 然後查influence 若沒通過就先刪除
 	int num = G.getEdgeNumber();
 	vector <pair<int, int>> edgeVector(num);
 	edgeVector = G.getAllEdges();
-	//先取得所有的edge 然後查influence 若沒通過就先刪除
 	double influence;
 	double threshold;
-	for (unsigned int i = 0; i< num; i++) {
+	for ( int i = 0; i < num; i++) {
 		influence = G.getEdgeInfluence(edgeVector.at(i).first, edgeVector.at(i).second);
 		threshold = G.getNodeThreshold(edgeVector.at(i).second);
-		if (influence<threshold) {
+		if (influence < threshold) {  
 			G.deleteEdge(edgeVector.at(i).first, edgeVector.at(i).second);
+		
 		}
 	}
 	//清掉沒什麼影響力的node
@@ -27,7 +33,7 @@ unordered_set<int> seedSelection(DirectedGraph G, unsigned int numberOfSeeds) {
 	vector<int>tmp0;
 	nodes = G.getAllNodes();
 	for (unsigned i = 0; i < nodes.size(); i++) {
-		tmp0=G.getNodeOutNeighbors(nodes.at(i));
+		tmp0 = G.getNodeOutNeighbors(nodes.at(i));
 		if (tmp0.size() <= 5) {
 			//	delete後vector<int> nodes內容物不會變
 			G.deleteNode(nodes.at(i));
@@ -44,11 +50,11 @@ unordered_set<int> seedSelection(DirectedGraph G, unsigned int numberOfSeeds) {
 	vector<int> tmp;
 	vector<int> tmp2;
 	int active;
-	int max=0;
-	int maxNode;	
+	int max = 0;
+	int maxNode=0;
 	//i為node j為i指向的node
 	//第一圈選一個影響力看似最大的
-	for (unsigned k = 0; k < numberOfSeeds;k++) {
+	for (unsigned k = 0; k < numberOfSeeds; k++) {
 		for (unsigned i = 0; i < nodes.size(); i++) {
 			active = 0;
 			tmp = G.getNodeOutNeighbors(nodes.at(i));
@@ -73,11 +79,9 @@ unordered_set<int> seedSelection(DirectedGraph G, unsigned int numberOfSeeds) {
 		}
 		tmp.clear();
 		nodes.clear();
-		a = G.getNodeNumber();
-		nodes.resize(a);
 		nodes = G.getAllNodes();
 	}
 	//unordered_set 容器裡元素是不會排序的，也沒有元素重複
 	return seeds;
-	}
+}
 #endif
