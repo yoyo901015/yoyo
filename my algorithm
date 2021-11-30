@@ -8,25 +8,22 @@ unordered_set<int> seedSelection(DirectedGraph G, unsigned int numberOfSeeds) {
 	unordered_set<int> seeds;
 	/* Put selected users into unordered_set seeds */
 	/* Implement your seed selection algorithm below */
-	//想法：先簡化問題 
-	//1.把不會一次通過的edge刪掉(剩下的edge只要有指向別的node就能activate)
-	//2.把指向node數太少的node刪掉
-	//3.透過迴圈篩選出 能activate最多人的node(還沒決定要用幾層)
 
-	//先取得所有的edge 然後查influence 若沒通過就先刪除
 	int num = G.getEdgeNumber();
+	//cout << num << endl;test
 	vector <pair<int, int>> edgeVector(num);
 	edgeVector = G.getAllEdges();
 	double influence;
 	double threshold;
-	for ( int i = 0; i < num; i++) {
+	for (int i = 0; i < num; i++) {
 		influence = G.getEdgeInfluence(edgeVector.at(i).first, edgeVector.at(i).second);
 		threshold = G.getNodeThreshold(edgeVector.at(i).second);
-		if (influence < threshold) {  
+		if (threshold-influence>0.1) {
 			G.deleteEdge(edgeVector.at(i).first, edgeVector.at(i).second);
-		
 		}
 	}
+	/*num = G.getEdgeNumber(); test
+	cout << num << endl;*/
 	//清掉沒什麼影響力的node
 	int a = G.getNodeNumber();
 	vector<int> nodes(a);
@@ -34,8 +31,7 @@ unordered_set<int> seedSelection(DirectedGraph G, unsigned int numberOfSeeds) {
 	nodes = G.getAllNodes();
 	for (unsigned i = 0; i < nodes.size(); i++) {
 		tmp0 = G.getNodeOutNeighbors(nodes.at(i));
-		if (tmp0.size() <= 5) {
-			//	delete後vector<int> nodes內容物不會變
+		if (tmp0.size() <=1) {
 			G.deleteNode(nodes.at(i));
 		}
 		tmp0.clear();
@@ -47,40 +43,66 @@ unordered_set<int> seedSelection(DirectedGraph G, unsigned int numberOfSeeds) {
 	nodes = G.getAllNodes();
 
 	//一個vector存所有可能node 然後用vector<int> getNodeOutNeighbors(int node)找尋每一個給多少人
-	vector<int> tmp;
+	vector<int> tmp1;
 	vector<int> tmp2;
+	vector<int> tmp3;
+	vector<int> diffuse;
+	vector<int>tmpDelete;
 	int active;
 	int max = 0;
 	int maxNode=0;
 	//i為node j為i指向的node
 	//第一圈選一個影響力看似最大的
-	for (unsigned k = 0; k < numberOfSeeds; k++) {
+	for (unsigned k = 0; k < (numberOfSeeds); k++) {
+		max = 0;
+		maxNode = 0;
 		for (unsigned i = 0; i < nodes.size(); i++) {
 			active = 0;
-			tmp = G.getNodeOutNeighbors(nodes.at(i));
-			active = tmp.size();
+			tmp1 = G.getNodeOutNeighbors(nodes.at(i));
+			active = tmp1.size();
 			//第二層
-			for (unsigned j = 0; j < tmp.size(); j++) {
-				tmp2 = G.getNodeOutNeighbors(tmp.at(j));
+			for (unsigned j = 0; j < tmp1.size(); j++) {
+				tmp2 = G.getNodeOutNeighbors(tmp1.at(j));
 				active += tmp2.size();
+				/*for (unsigned k = 0; k < tmp2.size(); k++) {
+					tmp3= G.getNodeOutNeighbors(tmp2.at(k));
+					active += tmp3.size();
+					tmp3.clear();
+				}*/
 				tmp2.clear();
 			}
 			if (active > max) {
 				max = active;
 				maxNode = i;
 			}
+			tmp1.clear();
 		}
-		//最大值存到seeds
+		//存入seeds 跑diffuse
 		seeds.insert(nodes.at(maxNode));
-		tmp.push_back(nodes.at(maxNode));
-		//後面想法 前面座兩層 所以其他seeds不可能取原點和第一層 
-		for (unsigned j = 0; j < tmp.size(); j++) {
-			G.deleteNode(tmp.at(j));
+		for (unsigned g = 0; g < tmpDelete.size(); g++) {
+			G.addNode(tmpDelete.at(g), 0.5);
 		}
-		tmp.clear();
+		diffuse = diffuse_all(&G, seeds);
+		//先把刪掉的seeds
+		tmpDelete.push_back(nodes.at(maxNode));
+		//後面想法 前面座兩層 所以其他seeds不可能取原點和第一層 
+		for (unsigned j = 0; j < diffuse.size(); j++) {
+			G.deleteNode(diffuse.at(j));
+		}
 		nodes.clear();
 		nodes = G.getAllNodes();
 	}
+	/*
+	for (unsigned g = 0; g < tmpDelete.size(); g++) {
+		G.addNode(tmpDelete.at(g), 0.5);
+	}
+	diffuse = diffuse_all(&G, seeds);
+	cout <<"size"<<diffuse.size() << endl;
+	for (unsigned diffuseNum = 0; diffuseNum < diffuse.size(); diffuseNum++) {
+		G.deleteNode(diffuse.at(diffuseNum));
+	}*/
+
+
 	//unordered_set 容器裡元素是不會排序的，也沒有元素重複
 	return seeds;
 }
