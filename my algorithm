@@ -1,109 +1,33 @@
-#ifndef YOUR_ALGORITHM_H
-#define YOUR_ALGORITHM_H
-
-#include "LT.h"
-#include "graph.h"
-
-unordered_set<int> seedSelection(DirectedGraph G, unsigned int numberOfSeeds) {
-	unordered_set<int> seeds;
-	/* Put selected users into unordered_set seeds */
-	/* Implement your seed selection algorithm below */
-
-	int num = G.getEdgeNumber();
-	//cout << num << endl;test
-	vector <pair<int, int>> edgeVector(num);
-	edgeVector = G.getAllEdges();
-	double influence;
-	double threshold;
-	for (int i = 0; i < num; i++) {
-		influence = G.getEdgeInfluence(edgeVector.at(i).first, edgeVector.at(i).second);
-		threshold = G.getNodeThreshold(edgeVector.at(i).second);
-		if (threshold-influence>0.1) {
-			G.deleteEdge(edgeVector.at(i).first, edgeVector.at(i).second);
-		}
+	ifstream in("Dataset.txt",ios::in); //open file for input 唯讀
+		if (!in) {
+		cerr << "File could not be opened" << endl;
+		exit(1);
 	}
-	/*num = G.getEdgeNumber(); test
-	cout << num << endl;*/
-	//清掉沒什麼影響力的node
-	int a = G.getNodeNumber();
-	vector<int> nodes(a);
-	vector<int>tmp0;
-	nodes = G.getAllNodes();
-	for (unsigned i = 0; i < nodes.size(); i++) {
-		tmp0 = G.getNodeOutNeighbors(nodes.at(i));
-		if (tmp0.size() <=1) {
-			G.deleteNode(nodes.at(i));
-		}
-		tmp0.clear();
-	}
-	nodes.clear();
-	//因為上面的刪除不會刪掉vector的東西 所以這裡要重製vector
-	a = G.getNodeNumber();
-	nodes.resize(a);
-	nodes = G.getAllNodes();
-
-	//一個vector存所有可能node 然後用vector<int> getNodeOutNeighbors(int node)找尋每一個給多少人
-	vector<int> tmp1;
-	vector<int> tmp2;
-	vector<int> tmp3;
-	vector<int> diffuse;
-	vector<int>tmpDelete;
-	int active;
-	int max = 0;
-	int maxNode=0;
-	//i為node j為i指向的node
-	//第一圈選一個影響力看似最大的
-	for (unsigned k = 0; k < (numberOfSeeds); k++) {
-		max = 0;
-		maxNode = 0;
-		for (unsigned i = 0; i < nodes.size(); i++) {
-			active = 0;
-			tmp1 = G.getNodeOutNeighbors(nodes.at(i));
-			active = tmp1.size();
-			//第二層
-			for (unsigned j = 0; j < tmp1.size(); j++) {
-				tmp2 = G.getNodeOutNeighbors(tmp1.at(j));
-				active += tmp2.size();
-				/*for (unsigned k = 0; k < tmp2.size(); k++) {
-					tmp3= G.getNodeOutNeighbors(tmp2.at(k));
-					active += tmp3.size();
-					tmp3.clear();
-				}*/
-				tmp2.clear();
+	while (in >> customer) {
+		//先存代號 再把後面整串存起來 然後把 ,改成 space 再讀檔存入vector
+		code.push_back(stoi(customer));
+		//為了讀買家買了甚麼藥把逗號轉換成空格再用isstringstream重新讀一次(空格視為中斷)
+		in >> product;
+		int n = product.size();
+		for (int i = 0; i < n; i++) {
+			if (product[i] == ',') {
+				product[i] = ' ';		//消除逗號
 			}
-			if (active > max) {
-				max = active;
-				maxNode = i;
+		}
+		istringstream stream(product);
+		string food;
+		//存個人買的東西
+		//存某東西有多少人買 用size即可得到出現次數
+		while (stream >> food) {
+			//cout << food << endl;
+			if (stoi(food) > maxProduct) {
+				maxProduct = stoi(food); //紀錄最大的商品
 			}
-			tmp1.clear();
+			count[stoi(food)].push_back(stoi(customer));
+			personalBuy.push_back(stoi(food));
 		}
-		//存入seeds 跑diffuse
-		seeds.insert(nodes.at(maxNode));
-		for (unsigned g = 0; g < tmpDelete.size(); g++) {
-			G.addNode(tmpDelete.at(g), 0.5);
-		}
-		diffuse = diffuse_all(&G, seeds);
-		//先把刪掉的seeds
-		tmpDelete.push_back(nodes.at(maxNode));
-		//後面想法 前面座兩層 所以其他seeds不可能取原點和第一層 
-		for (unsigned j = 0; j < diffuse.size(); j++) {
-			G.deleteNode(diffuse.at(j));
-		}
-		nodes.clear();
-		nodes = G.getAllNodes();
-	}
-	/*
-	for (unsigned g = 0; g < tmpDelete.size(); g++) {
-		G.addNode(tmpDelete.at(g), 0.5);
-	}
-	diffuse = diffuse_all(&G, seeds);
-	cout <<"size"<<diffuse.size() << endl;
-	for (unsigned diffuseNum = 0; diffuseNum < diffuse.size(); diffuseNum++) {
-		G.deleteNode(diffuse.at(diffuseNum));
-	}*/
+		buy.push_back(personalBuy);
+		personalBuy.clear();
 
-
-	//unordered_set 容器裡元素是不會排序的，也沒有元素重複
-	return seeds;
-}
-#endif
+	}
+	cout << "data storage finish" << endl;
