@@ -1,8 +1,37 @@
-	ifstream in("Dataset.txt",ios::in); //open file for input 唯讀
-		if (!in) {
+#include<iostream>
+#include<fstream>
+#include<string>
+#include<sstream>
+#include<algorithm>
+#include<regex>
+
+using namespace std;
+int main() {
+	//regex_search防呆 0~1
+	double min_supp, min_conf;
+	int maxProduct = 0;
+	cout << "Insert min_supp:";
+	cin >> min_supp;
+	cout << "Insert min_conf:";
+	cin >> min_conf;
+
+	ifstream in("Dataset.txt", ios::in); //open file for input 唯讀
+	ofstream out("Dataset_Output.txt", ios::out); //open file for output 
+	if (!in) {
 		cerr << "File could not be opened" << endl;
 		exit(1);
 	}
+	//上面沒事
+	vector<int>code;
+	vector<vector<int>> buy;
+	vector<int>personalBuy;
+	vector<int> count[20000];
+	string customer;
+	string product;
+	vector<int> base;
+	buy.push_back(base);
+	//int customer = 1; //先暫時當顧客的計數器 但最好能用讀檔讀出來
+	//while讀到代號 先存起來
 	while (in >> customer) {
 		//先存代號 再把後面整串存起來 然後把 ,改成 space 再讀檔存入vector
 		code.push_back(stoi(customer));
@@ -17,17 +46,449 @@
 		istringstream stream(product);
 		string food;
 		//存個人買的東西
+		regex reg("(\\d{1,6})");
 		//存某東西有多少人買 用size即可得到出現次數
 		while (stream >> food) {
 			//cout << food << endl;
+		if(regex_match(food,reg)){
 			if (stoi(food) > maxProduct) {
 				maxProduct = stoi(food); //紀錄最大的商品
 			}
 			count[stoi(food)].push_back(stoi(customer));
 			personalBuy.push_back(stoi(food));
 		}
+		}
 		buy.push_back(personalBuy);
 		personalBuy.clear();
-
 	}
 	cout << "data storage finish" << endl;
+
+	//stoi可將string轉換成int stod把string轉換成double 
+		/*路徑請採用相對路徑。
+		輸出結果第一行要是rule的數量，例如：你找到30個rule，那麼第一行就是30。
+		輸出結果每一行即為一個rule，關係請用 "=>" 表達。 例如：A => B*/
+	int ruleNum = 0;
+	//先用mid support找frequent patterns
+	//讀檔時可以先分析每一個東西有多少個
+	//放入vector後分析 兩個在一
+	double numOfCustomer = code.size();
+	//這個用來放組合 [1]放一個商品的 [2]放兩個
+	vector<int>tmpFrequent;
+	vector<vector<int>> frequentPattern; //從1開始用 1存放一個的 2放兩個的
+	vector<int> tmpBuyer;
+	vector<vector<int>>buyer1;
+	vector<vector<int>>buyer2;
+	vector<vector<int>>buyer3;
+	vector<vector<int>>buyer4;
+	vector<vector<int>>buyer5;
+	vector<vector<int>>buyer6;
+
+
+	frequentPattern.push_back(base);
+	//判斷frequent pattern(1個商品)
+	for (int i = 0; i <= maxProduct; i++) {
+		if (count[i].size() >= numOfCustomer * min_supp) {
+			tmpFrequent.push_back((i));
+			for (unsigned j = 0; j < count[i].size(); j++) {
+				tmpBuyer.push_back(count[i].at(j));
+			}
+			buyer1.push_back(tmpBuyer);
+			tmpBuyer.clear();
+		}
+	}
+	/*	for (unsigned i = 0; i<buyer1.size(); i++) {
+			for (unsigned j = 0; j < buyer1[i].size(); j++) {
+				cout << buyer1[i].at(j) << " ";
+			}
+			cout << endl;
+		}*/
+
+
+		//frequentPattern[1].at(0)對應到 buyer1.at(0)
+	frequentPattern.push_back(tmpFrequent);
+	for (unsigned i = 0; i < frequentPattern[1].size(); i++) {
+		cout << frequentPattern[1].at(i) << " ";
+	}
+	int num = 0;
+	vector<int>tmptmp;
+	//兩個數 從tmpFrequent取兩個出來比對
+	//要把合格的記錄下來 還有要記錄有誰買的
+	for (unsigned i = 0; i < frequentPattern[1].size(); i++) {
+		for (unsigned j = i + 1; j < frequentPattern[1].size(); j++) {
+			num = 0;
+			for (unsigned k = 0; k < count[frequentPattern[1].at(i)].size(); k++) {
+				for (unsigned m = 0; m < buy[count[frequentPattern[1].at(i)].at(k)].size(); m++) {
+					if (buy[count[frequentPattern[1].at(i)].at(k)].at(m) == frequentPattern[1].at(j)) {
+						tmpBuyer.push_back(count[frequentPattern[1].at(i)].at(k));//存買家 如果有通過的話買家資料要留
+						//沒有的話可以清掉
+						num++;
+					}
+				}
+			}
+			if (num >= numOfCustomer * min_supp) {
+				//cout << frequentPattern[1].at(i) << " " << frequentPattern[1].at(j) << endl;
+				tmptmp.push_back(frequentPattern[1].at(i));
+				tmptmp.push_back(frequentPattern[1].at(j));
+				buyer2.push_back(tmpBuyer);
+				tmpBuyer.clear();
+			}
+			else {
+				tmpBuyer.clear();
+			}
+		}
+	}
+	frequentPattern.push_back(tmptmp);
+	tmptmp.clear();
+	cout << endl;
+	/*for (unsigned i = 0; i < buyer2.size(); i++) {
+		for (unsigned j = 0; j < buyer2[i].size(); j++) {
+			cout << buyer2[i].at(j) << " ";
+		}
+		cout << endl;
+	}*/
+	for (unsigned i = 0; i < frequentPattern[2].size(); i += 2) {
+		cout << frequentPattern[2].at(i) << ",";
+		cout << frequentPattern[2].at(i + 1) << " ";
+	}
+	cout << endl;
+
+	//frequentPattern[2].at(0).at(1)對應到 buyer2[0]
+	// 0 1 /2 3 /4 5 /6 7
+	for (unsigned i = 0; i < frequentPattern[2].size(); i += 2) {
+		for (unsigned j = i + 2; j < frequentPattern[2].size(); j += 2) {
+			num = 0;
+			//先判斷是否能組成一組三個的
+			//兩個都過的話 就跳過 一個過的話選那一個
+			int check = 0;
+			int tmpProduct = 0;
+			if (frequentPattern[2].at(j) == frequentPattern[2].at(i) || frequentPattern[2].at(j) == frequentPattern[2].at(i + 1)) {
+				check++;
+				tmpProduct = frequentPattern[2].at(j + 1);
+			}
+			if (frequentPattern[2].at(j + 1) == frequentPattern[2].at(i) || frequentPattern[2].at(j) == frequentPattern[2].at(i + 1)) {
+				check++;
+				tmpProduct = frequentPattern[2].at(j);
+			}
+			if (check == 2) {
+				continue;
+			}
+			int skip = 0;
+			for (unsigned q = 0; q < tmptmp.size(); q += 3) {
+				if (frequentPattern[2].at(i) == tmptmp.at(q) || frequentPattern[2].at(i + 1) == tmptmp.at(q) || tmpProduct == tmptmp.at(q)) {
+					skip++;
+				}
+			}
+
+
+			if (skip != 3) {
+				for (unsigned k = 0; k < buyer2[i / 2].size(); k++) {//看買家有沒有買上面的東西
+					for (unsigned m = 0; m < buy[buyer2[i / 2].at(k)].size(); m++) {
+						if (buy[buyer2[i / 2].at(k)].at(m) == tmpProduct) {
+							num++;
+							tmpBuyer.push_back(buyer2[i / 2].at(k));
+						}
+					}
+				}
+				//如果重複就不可以存
+				if (num >= numOfCustomer * min_supp) {
+					tmptmp.push_back(frequentPattern[2].at(i));
+					tmptmp.push_back(frequentPattern[2].at(i + 1));
+					tmptmp.push_back(tmpProduct);
+					buyer3.push_back(tmpBuyer);
+					tmpBuyer.clear();
+				}
+				else {
+					tmpBuyer.clear();
+				}
+			}
+		}
+	}
+	frequentPattern.push_back(tmptmp);
+	tmptmp.clear();
+	for (unsigned i = 0; i < frequentPattern[3].size(); i += 3) {
+		cout << frequentPattern[3].at(i) << ",";
+		cout << frequentPattern[3].at(i + 1) << ",";
+		cout << frequentPattern[3].at(i + 2) << " ";
+	}
+	cout << endl;
+
+	//轉變策略frequentPattern[3]去對frequentPattern[1] 先檢查有沒有重複 在看看有沒有通過
+	// 012/345/678
+	for (unsigned i = 0; i < buyer3.size(); i++) {
+		for (unsigned j = 0; j < buyer3[i].size(); j++) {
+			cout << buyer3[i].at(j) << " ";
+		}
+		cout << endl;
+	}
+	cout << endl;
+
+		for (unsigned i = 0; i < frequentPattern[3].size(); i += 3) {
+			for (unsigned j = 0; j < frequentPattern[1].size(); j++) {
+				//防止重複裝置 
+				//cout << j << endl;
+				//cout << frequentPattern[1].at(j) << endl;
+				if (frequentPattern[1].at(j) == frequentPattern[3].at(i) || frequentPattern[1].at(j) == frequentPattern[3].at(i + 1) || frequentPattern[1].at(j) == frequentPattern[3].at(i + 2)) {
+					//cout << "pass" << endl;
+					continue;//確保四個不重複
+				}
+				num = 0;
+				int skip = 0;
+				for (unsigned q = 0; q < tmptmp.size(); q += 4) {
+					//先暫時放著 好懶的寫
+					if (frequentPattern[3].at(i) == tmptmp.at(q) || frequentPattern[3].at(i + 1) == tmptmp.at(q) || frequentPattern[3].at(i + 2) == tmptmp.at(q) || frequentPattern[1].at(j) == tmptmp.at(q)) {
+						skip++;
+					}
+					if (frequentPattern[3].at(i) == tmptmp.at(q+1) || frequentPattern[3].at(i + 1) == tmptmp.at(q+1) || frequentPattern[3].at(i + 2) == tmptmp.at(q+1) || frequentPattern[1].at(j) == tmptmp.at(q+1)) {
+						skip++;
+					}
+					if (frequentPattern[3].at(i) == tmptmp.at(q+2) || frequentPattern[3].at(i + 1) == tmptmp.at(q+2) || frequentPattern[3].at(i + 2) == tmptmp.at(q+2) || frequentPattern[1].at(j) == tmptmp.at(q+2)) {
+						skip++;
+					}
+					if (frequentPattern[3].at(i) == tmptmp.at(q+3) || frequentPattern[3].at(i + 1) == tmptmp.at(q+3) || frequentPattern[3].at(i + 2) == tmptmp.at(q+3) || frequentPattern[1].at(j) == tmptmp.at(q+3)) {
+						skip++;
+					}
+				}
+				if (skip != 4) {
+					for (unsigned k = 0;k<buyer3[i / 3].size(); k++) {
+						for (unsigned m = 0; m< buy[buyer3[i / 3].at(k)].size(); m++) {
+							if (buy[buyer3[i / 3].at(k)].at(m) == frequentPattern[1].at(j)) {
+								num++;
+								tmpBuyer.push_back(buyer3[i / 3].at(k));
+							}
+						}
+					}
+
+					if (num >= numOfCustomer * min_supp) {
+						tmptmp.push_back(frequentPattern[3].at(i));
+						tmptmp.push_back(frequentPattern[3].at(i + 1));
+						tmptmp.push_back(frequentPattern[3].at(i + 2));
+						tmptmp.push_back(frequentPattern[1].at(j));
+						buyer4.push_back(tmpBuyer);
+						tmpBuyer.clear();
+					}
+					else {
+						tmpBuyer.clear();
+					}
+				}
+			}
+		}
+		frequentPattern.push_back(tmptmp);
+		tmptmp.clear();
+		for (unsigned i = 0; i < buyer4.size(); i++) {
+			for (unsigned j = 0; j < buyer4[i].size(); j++) {
+				cout << buyer4[i].at(j) << " ";
+			}
+			cout << endl;
+		}
+		cout << endl;
+
+
+		cout << "Frequent patterns" << endl;
+		/*for (unsigned i = 1; i < frequentPattern.size(); i++) {
+			for (unsigned j = 0; j < frequentPattern[i].size();) {
+					cout << frequentPattern[i].at() << ' ';
+			}
+			cout << endl;
+		}*/
+		//cout << endl;
+		/*for (unsigned i = 0; i < frequentPattern[2].size(); i+=2) {
+			cout << frequentPattern[2].at(i) << ",";
+			cout << frequentPattern[2].at(i+1) << " ";
+		}
+		cout << endl;*/
+		/*for (unsigned i = 0; i < frequentPattern[3].size(); i += 3) {
+			cout << frequentPattern[3].at(i) << ",";
+			cout << frequentPattern[3].at(i + 1) << ",";
+			cout << frequentPattern[3].at(i + 2) << " ";
+		}
+		cout << endl;*/
+		for (unsigned i = 0; i < frequentPattern[4].size(); i += 4) {
+			cout << frequentPattern[4].at(i) << ",";
+			cout << frequentPattern[4].at(i + 1) << ",";
+			cout << frequentPattern[4].at(i + 2) << ",";
+			cout << frequentPattern[4].at(i + 3) << " ";
+
+		}
+		cout << endl;
+
+		/*	尚未解決:
+			(2)測資大道會有很多rule時怎麼辦啊
+			*/
+
+	//strong association rules
+			//frequentPatterns[2]開始 frequentPatterns2.at(0) frequentPatterns2.at(1)
+		vector<vector<int>> rule;
+		vector<int>rule1_1;
+		vector<int>rule1_2;
+		vector<int>rule2_1;
+		vector<int>rule3_1;
+		vector<int>rule1_3;
+		vector<int>rule2_2;
+
+
+
+		vector<int> tmpRule;
+		rule.push_back(base);
+		rule.push_back(base);
+		//rule[2]
+		for (unsigned int i = 0; i < frequentPattern[2].size(); i += 2) {
+			for (unsigned j = 0; j < 2; j++) { //正反都跑
+				int denominator = count[i].size(); //A=>B  分母放A 分子放A交B
+				int numerator = buyer2[i / 2].size(); //兩次不變
+				if (numerator >= denominator * min_conf) {
+					//解法:insert到後面後 把前面erase掉
+					rule1_1.push_back(frequentPattern[2].at(i));
+					rule1_1.push_back(frequentPattern[2].at(i + 1));
+				}
+				//交換位置
+				frequentPattern[2].insert(frequentPattern[2].begin()+(i + 2), frequentPattern[2].at(i));
+				frequentPattern[2].erase(frequentPattern[2].begin() + (i));
+			}
+		}
+//		rule.push_back(tmpRule);
+//		tmpRule.clear();
+		//rule[3]
+		//1對2 2對1怎解阿
+		//1對2
+		
+		for (unsigned int i = 0; i < frequentPattern[3].size(); i += 3) {
+			for (unsigned j = 0; j < 3; j++) { //正反都跑
+				int denominator = count[i].size(); //A=>B,C  分母放A 分子放A交B
+				int numerator = buyer3[i / 3].size(); //都不會變
+				if (numerator >= denominator * min_conf) {
+					rule1_2.push_back(frequentPattern[3].at(i));
+					rule1_2.push_back(frequentPattern[3].at(i + 1));
+					rule1_2.push_back(frequentPattern[3].at(i + 2));
+				}
+				frequentPattern[3].insert(frequentPattern[3].begin() + (i + 3), frequentPattern[3].at(i));
+				frequentPattern[3].erase(frequentPattern[3].begin() + (i));
+			}
+		}
+		//2對1
+		for (unsigned int i = 0; i < frequentPattern[3].size(); i += 3) {
+			for (unsigned j = 0; j < 3; j++) { 
+				//int denominator = buyer2[j].size(); A,B=>C  不能這樣搞 因為順序不對
+				int denominator = 0;
+				for (unsigned k = 0; k < count[frequentPattern[3].at(i)].size();k++) {
+					for (unsigned m=0;m< buy[count[frequentPattern[3].at(i)].at(k)].size(); m++) {
+						if (buy[count[frequentPattern[3].at(i)].at(k)].at(m)== frequentPattern[3].at(i + 1)) {
+							denominator++;
+						}
+					}
+				}
+
+				int numerator = buyer3[i / 3].size(); //都不會變
+				if (numerator >= denominator * min_conf) {
+					rule2_1.push_back(frequentPattern[3].at(i));
+					rule2_1.push_back(frequentPattern[3].at(i + 1));
+					rule2_1.push_back(frequentPattern[3].at(i + 2));
+				}
+				frequentPattern[3].insert(frequentPattern[3].begin() + (i + 3), frequentPattern[3].at(i));
+				frequentPattern[3].erase(frequentPattern[3].begin() + (i));
+			}
+		}
+		//1對3
+		for (unsigned int i = 0; i < frequentPattern[4].size(); i += 4) {
+			for (unsigned j = 0; j < 4; j++) { //正反都跑
+				int denominator = count[i].size(); //A=>B,C  分母放A 分子放A交B
+				int numerator = buyer4[i / 4].size(); //都不會變
+				if (numerator >= denominator * min_conf) {
+					rule1_3.push_back(frequentPattern[4].at(i));
+					rule1_3.push_back(frequentPattern[4].at(i + 1));
+					rule1_3.push_back(frequentPattern[4].at(i + 2));
+					rule1_3.push_back(frequentPattern[4].at(i + 3));
+				}
+				frequentPattern[4].insert(frequentPattern[4].begin() + (i + 4), frequentPattern[4].at(i));
+				frequentPattern[4].erase(frequentPattern[4].begin() + (i));
+			}
+		}
+		//2對2
+		for (unsigned int i = 0; i < frequentPattern[4].size(); i += 4) {
+			for (unsigned j = 0; j < 4; j++) {
+				int numerator = buyer4[i / 4].size(); //都不會變
+				int denominator = 0;
+				for (unsigned k = 0; k < count[frequentPattern[4].at(i)].size(); k++) {
+					for (unsigned m = 0; m < buy[count[frequentPattern[4].at(i)].at(k)].size(); m++) {
+						if (buy[count[frequentPattern[4].at(i)].at(k)].at(m) == frequentPattern[4].at(i + 1)) {
+							denominator++;
+						}
+					}
+				}
+				if (numerator >= denominator * min_conf) {
+					rule2_2.push_back(frequentPattern[4].at(i));
+					rule2_2.push_back(frequentPattern[4].at(i + 1));
+					rule2_2.push_back(frequentPattern[4].at(i + 2));
+					rule2_2.push_back(frequentPattern[4].at(i + 3));
+				}
+				frequentPattern[4].insert(frequentPattern[4].begin() + (i + 4), frequentPattern[4].at(i));
+				frequentPattern[4].erase(frequentPattern[4].begin() + (i));
+
+			}
+		}
+		//3to1 A,B,C=>D
+		vector<int> tmpBuy;
+		for (unsigned int i = 0; i < frequentPattern[4].size(); i += 4) {
+			for (unsigned j = 0; j < 4; j++) {
+				int numerator = buyer4[i / 4].size(); //都不會變
+				int denominator = 0;
+				for (unsigned k = 0; k < count[frequentPattern[4].at(i)].size(); k++) {
+					for (unsigned m = 0; m < buy[count[frequentPattern[4].at(i)].at(k)].size(); m++) {
+						if (buy[count[frequentPattern[4].at(i)].at(k)].at(m) == frequentPattern[4].at(i + 1)) {
+							tmpBuy.push_back(count[frequentPattern[4].at(i)].at(k));
+						}
+					}
+				}
+				for (unsigned k = 0; k < tmpBuy.size(); k++) {
+					for (unsigned m = 0; m < buy[tmpBuy.at(k)].size();m++) {
+						if (buy[tmpBuy.at(k)].at(m) == frequentPattern[4].at(i + 2)) {
+							denominator++;
+						}
+					}
+				}
+				if (numerator >= denominator * min_conf) {
+					rule3_1.push_back(frequentPattern[4].at(i));
+					rule3_1.push_back(frequentPattern[4].at(i + 1));
+					rule3_1.push_back(frequentPattern[4].at(i + 2));
+					rule3_1.push_back(frequentPattern[4].at(i + 3));
+				}
+				frequentPattern[4].insert(frequentPattern[4].begin() + (i + 4), frequentPattern[4].at(i));
+				frequentPattern[4].erase(frequentPattern[4].begin() + (i));
+
+			}
+		}
+		int size = 0;
+		size += (rule1_1.size() / 2);
+		size += (rule1_2.size() / 3);
+		size += (rule2_1.size() / 3);
+		size += (rule1_3.size() / 4);
+		size += (rule2_2.size() / 4);
+		size += (rule3_1.size() / 4);
+
+
+		cout << "strong association rules" << endl;
+		cout << size << endl;
+		
+		
+		for (unsigned i = 0; i < rule1_1.size(); i+=2) {
+			cout << rule1_1.at(i) << "=>" << rule1_1.at(i + 1) << endl;
+		}
+		for (unsigned i = 0; i < rule1_2.size(); i+=3) {
+			cout << rule1_2.at(i) << "=>{" << rule1_2.at(i + 1) <<"," << rule1_2.at(i + 2) <<"}"<< endl;
+			}
+		for (unsigned i = 0; i < rule2_1.size(); i += 3) {
+			cout <<"{"<<rule2_1.at(i) << "," << rule2_1.at(i + 1) << "}=>" << rule2_1.at(i + 2)<< endl;
+		}
+		//三個一組
+		for (unsigned i = 0; i < rule1_3.size(); i += 4) {
+			cout << rule1_3.at(i) << "=>{" << rule1_3.at(i + 1) << "," << rule1_3.at(i + 2) <<","<< rule1_3.at(i + 3)<< "}" << endl;
+		}
+		for (unsigned i = 0; i < rule2_2.size(); i += 4) {
+			cout << "{" << rule2_2.at(i) << "," << rule2_2.at(i + 1) << "}=>{" << rule2_2.at(i + 2) << "," << rule2_2.at(i + 3) <<"}"<< endl;
+		}
+		for (unsigned i = 0; i < rule3_1.size(); i += 4) {
+			cout << "{" << rule2_2.at(i) << "," << rule2_2.at(i + 1) <<","<< rule2_2.at(i + 2) << "}=>"<< rule2_2.at(i + 3) << endl;
+		}
+
+
+		return 0;
+	}
