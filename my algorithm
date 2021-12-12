@@ -4,12 +4,12 @@
 #include<sstream>
 #include<algorithm>
 #include<regex>
-
 using namespace std;
+
 int main() {
 	//regex_search防呆 0~1
 	double min_supp, min_conf;
-	int maxProduct = 0;
+	int maxProduct = 5; //如果測資都不是數字 A~E
 	cout << "Insert min_supp:";
 	cin >> min_supp;
 	cout << "Insert min_conf:";
@@ -23,12 +23,15 @@ int main() {
 	}
 	//上面沒事
 	vector<int>code;
-	vector<vector<int>> buy;
-	vector<int>personalBuy;
+	vector<vector<string>> buy;
+	vector<string>personalBuy;
+
+	vector<vector<int>>otherCount[6];
 	vector<int> count[20000];
 	string customer;
 	string product;
-	vector<int> base;
+	vector<string> base;
+	bool ABCexist = false;
 	buy.push_back(base);
 	//int customer = 1; //先暫時當顧客的計數器 但最好能用讀檔讀出來
 	//while讀到代號 先存起來
@@ -50,31 +53,56 @@ int main() {
 		//存某東西有多少人買 用size即可得到出現次數
 		while (stream >> food) {
 			//cout << food << endl;
-		if(regex_match(food,reg)){
-			if (stoi(food) > maxProduct) {
-				maxProduct = stoi(food); //紀錄最大的商品
+			if (regex_match(food, reg)) {//數字放這裡
+				if (stoi(food) > maxProduct) {
+					maxProduct = stoi(food); //紀錄最大的商品
+				}
+				count[stoi(food)].push_back(stoi(customer));
+				personalBuy.push_back(food);
 			}
-			count[stoi(food)].push_back(stoi(customer));
-			personalBuy.push_back(stoi(food));
-		}
+			else {// A B C D E ABC放這
+				if( food=="ABC") {
+					count[0].push_back(stoi(customer));
+					ABCexist = true;
+					personalBuy.push_back("0");
+				}
+				else if (food == "A") {
+					count[1].push_back(stoi(customer));
+					personalBuy.push_back("1");
+				}
+				else if (food == "B") {
+					count[2].push_back(stoi(customer));
+					personalBuy.push_back("2");
+				}
+				else if (food == "C") {
+					count[3].push_back(stoi(customer));
+					personalBuy.push_back("3");
+				}
+				else if (food == "D") {
+					count[4].push_back(stoi(customer));
+					personalBuy.push_back("4");
+				}
+				else if (food == "E") {
+					count[5].push_back(stoi(customer));
+					personalBuy.push_back("5");
+				}
+			}
 		}
 		buy.push_back(personalBuy);
 		personalBuy.clear();
 	}
-	cout << "data storage finish" << endl;
 
-	//stoi可將string轉換成int stod把string轉換成double 
-		/*路徑請採用相對路徑。
-		輸出結果第一行要是rule的數量，例如：你找到30個rule，那麼第一行就是30。
-		輸出結果每一行即為一個rule，關係請用 "=>" 表達。 例如：A => B*/
-	int ruleNum = 0;
-	//先用mid support找frequent patterns
-	//讀檔時可以先分析每一個東西有多少個
-	//放入vector後分析 兩個在一
+	for (unsigned i = 0; i < buy.size(); i++) {
+		for (unsigned j = 0; j < buy[i].size(); j++) {
+			cout << buy[i].at(j) << " ";
+		}
+		cout << endl;
+	}
+	cout << "data storage finish" << endl;
 	double numOfCustomer = code.size();
-	//這個用來放組合 [1]放一個商品的 [2]放兩個
-	vector<int>tmpFrequent;
-	vector<vector<int>> frequentPattern; //從1開始用 1存放一個的 2放兩個的
+
+	vector<string>tmpFrequent;
+	vector<vector<string>> frequentPattern; //從1開始用 1存放一個的 2放兩個的
 	vector<int> tmpBuyer;
 	vector<vector<int>>buyer1;
 	vector<vector<int>>buyer2;
@@ -85,10 +113,12 @@ int main() {
 
 
 	frequentPattern.push_back(base);
-	//判斷frequent pattern(1個商品)
+	//判斷frequent pattern(1個商品)	
 	for (int i = 0; i <= maxProduct; i++) {
 		if (count[i].size() >= numOfCustomer * min_supp) {
-			tmpFrequent.push_back((i));
+			//存frequent
+			tmpFrequent.push_back(to_string(i));
+			//存買家
 			for (unsigned j = 0; j < count[i].size(); j++) {
 				tmpBuyer.push_back(count[i].at(j));
 			}
@@ -96,30 +126,33 @@ int main() {
 			tmpBuyer.clear();
 		}
 	}
-	/*	for (unsigned i = 0; i<buyer1.size(); i++) {
+	
+	/*for (unsigned i = 0; i<buyer1.size(); i++) {
 			for (unsigned j = 0; j < buyer1[i].size(); j++) {
 				cout << buyer1[i].at(j) << " ";
 			}
 			cout << endl;
-		}*/
-
-
-		//frequentPattern[1].at(0)對應到 buyer1.at(0)
+	}*/
+	//frequentPattern[1].at(0)對應到 buyer1.at(0)
 	frequentPattern.push_back(tmpFrequent);
+	cout << endl;
+	cout << "frequentPattern[1]:" << endl;
 	for (unsigned i = 0; i < frequentPattern[1].size(); i++) {
 		cout << frequentPattern[1].at(i) << " ";
 	}
+	cout << endl;
 	int num = 0;
-	vector<int>tmptmp;
+	vector<string>tmptmp;
 	//兩個數 從tmpFrequent取兩個出來比對
 	//要把合格的記錄下來 還有要記錄有誰買的
 	for (unsigned i = 0; i < frequentPattern[1].size(); i++) {
 		for (unsigned j = i + 1; j < frequentPattern[1].size(); j++) {
 			num = 0;
-			for (unsigned k = 0; k < count[frequentPattern[1].at(i)].size(); k++) {
-				for (unsigned m = 0; m < buy[count[frequentPattern[1].at(i)].at(k)].size(); m++) {
-					if (buy[count[frequentPattern[1].at(i)].at(k)].at(m) == frequentPattern[1].at(j)) {
-						tmpBuyer.push_back(count[frequentPattern[1].at(i)].at(k));//存買家 如果有通過的話買家資料要留
+			for (unsigned k = 0; k < count[stoi(frequentPattern[1].at(i))].size(); k++) {
+				for (unsigned m = 0; m < buy[count[stoi(frequentPattern[1].at(i))].at(k)].size(); m++) {
+					//cout << buy[count[stoi(frequentPattern[1].at(i))].at(k)].at(m) << " " << frequentPattern[1].at(j) << endl;
+					if (buy[count[stoi(frequentPattern[1].at(i))].at(k)].at(m) == frequentPattern[1].at(j)) {
+						tmpBuyer.push_back(count[stoi(frequentPattern[1].at(i))].at(k));//存買家 如果有通過的話買家資料要留
 						//沒有的話可以清掉
 						num++;
 					}
@@ -160,7 +193,7 @@ int main() {
 			//先判斷是否能組成一組三個的
 			//兩個都過的話 就跳過 一個過的話選那一個
 			int check = 0;
-			int tmpProduct = 0;
+			string tmpProduct;
 			if (frequentPattern[2].at(j) == frequentPattern[2].at(i) || frequentPattern[2].at(j) == frequentPattern[2].at(i + 1)) {
 				check++;
 				tmpProduct = frequentPattern[2].at(j + 1);
@@ -282,26 +315,6 @@ int main() {
 		}
 		cout << endl;
 
-
-		cout << "Frequent patterns" << endl;
-		/*for (unsigned i = 1; i < frequentPattern.size(); i++) {
-			for (unsigned j = 0; j < frequentPattern[i].size();) {
-					cout << frequentPattern[i].at() << ' ';
-			}
-			cout << endl;
-		}*/
-		//cout << endl;
-		/*for (unsigned i = 0; i < frequentPattern[2].size(); i+=2) {
-			cout << frequentPattern[2].at(i) << ",";
-			cout << frequentPattern[2].at(i+1) << " ";
-		}
-		cout << endl;*/
-		/*for (unsigned i = 0; i < frequentPattern[3].size(); i += 3) {
-			cout << frequentPattern[3].at(i) << ",";
-			cout << frequentPattern[3].at(i + 1) << ",";
-			cout << frequentPattern[3].at(i + 2) << " ";
-		}
-		cout << endl;*/
 		for (unsigned i = 0; i < frequentPattern[4].size(); i += 4) {
 			cout << frequentPattern[4].at(i) << ",";
 			cout << frequentPattern[4].at(i + 1) << ",";
@@ -317,19 +330,14 @@ int main() {
 
 	//strong association rules
 			//frequentPatterns[2]開始 frequentPatterns2.at(0) frequentPatterns2.at(1)
-		vector<vector<int>> rule;
-		vector<int>rule1_1;
-		vector<int>rule1_2;
-		vector<int>rule2_1;
-		vector<int>rule3_1;
-		vector<int>rule1_3;
-		vector<int>rule2_2;
-
-
-
-		vector<int> tmpRule;
-		rule.push_back(base);
-		rule.push_back(base);
+		vector<string>rule1_1;
+		vector<string>rule1_2;
+		vector<string>rule2_1;
+		vector<string>rule3_1;
+		vector<string>rule1_3;
+		vector<string>rule2_2;
+		vector<string> tmpRule;
+		
 		//rule[2]
 		for (unsigned int i = 0; i < frequentPattern[2].size(); i += 2) {
 			for (unsigned j = 0; j < 2; j++) { //正反都跑
@@ -369,9 +377,9 @@ int main() {
 			for (unsigned j = 0; j < 3; j++) { 
 				//int denominator = buyer2[j].size(); A,B=>C  不能這樣搞 因為順序不對
 				int denominator = 0;
-				for (unsigned k = 0; k < count[frequentPattern[3].at(i)].size();k++) {
-					for (unsigned m=0;m< buy[count[frequentPattern[3].at(i)].at(k)].size(); m++) {
-						if (buy[count[frequentPattern[3].at(i)].at(k)].at(m)== frequentPattern[3].at(i + 1)) {
+				for (unsigned k = 0; k < count[stoi(frequentPattern[3].at(i))].size();k++) {
+					for (unsigned m=0;m< buy[count[stoi(frequentPattern[3].at(i))].at(k)].size(); m++) {
+						if (buy[count[stoi(frequentPattern[3].at(i))].at(k)].at(m)== frequentPattern[3].at(i + 1)) {
 							denominator++;
 						}
 					}
@@ -407,9 +415,9 @@ int main() {
 			for (unsigned j = 0; j < 4; j++) {
 				int numerator = buyer4[i / 4].size(); //都不會變
 				int denominator = 0;
-				for (unsigned k = 0; k < count[frequentPattern[4].at(i)].size(); k++) {
-					for (unsigned m = 0; m < buy[count[frequentPattern[4].at(i)].at(k)].size(); m++) {
-						if (buy[count[frequentPattern[4].at(i)].at(k)].at(m) == frequentPattern[4].at(i + 1)) {
+				for (unsigned k = 0; k < count[stoi(frequentPattern[4].at(i))].size(); k++) {
+					for (unsigned m = 0; m < buy[count[stoi(frequentPattern[4].at(i))].at(k)].size(); m++) {
+						if (buy[count[stoi(frequentPattern[4].at(i))].at(k)].at(m) == frequentPattern[4].at(i + 1)) {
 							denominator++;
 						}
 					}
@@ -431,10 +439,10 @@ int main() {
 			for (unsigned j = 0; j < 4; j++) {
 				int numerator = buyer4[i / 4].size(); //都不會變
 				int denominator = 0;
-				for (unsigned k = 0; k < count[frequentPattern[4].at(i)].size(); k++) {
-					for (unsigned m = 0; m < buy[count[frequentPattern[4].at(i)].at(k)].size(); m++) {
-						if (buy[count[frequentPattern[4].at(i)].at(k)].at(m) == frequentPattern[4].at(i + 1)) {
-							tmpBuy.push_back(count[frequentPattern[4].at(i)].at(k));
+				for (unsigned k = 0; k < count[stoi(frequentPattern[4].at(i))].size(); k++) {
+					for (unsigned m = 0; m < buy[count[stoi(frequentPattern[4].at(i))].at(k)].size(); m++) {
+						if (buy[count[stoi(frequentPattern[4].at(i))].at(k)].at(m) == frequentPattern[4].at(i + 1)) {
+							tmpBuy.push_back(count[stoi(frequentPattern[4].at(i))].at(k));
 						}
 					}
 				}
@@ -466,27 +474,213 @@ int main() {
 
 
 		cout << "strong association rules" << endl;
+		out << size << endl;
 		cout << size << endl;
 		
-		
+		if (maxProduct == 5) { //把12345換成ABCDE
+			for (unsigned i = 0; i < rule1_1.size(); i ++) {
+				if (rule1_1.at(i) == "1") {
+					rule1_1.insert(rule1_1.begin() + (i+1), "A");
+					rule1_1.erase(rule1_1.begin() + i);
+				}
+				if (rule1_1.at(i) == "2") {
+					rule1_1.insert(rule1_1.begin() + (i + 1), "B");
+					rule1_1.erase(rule1_1.begin() + i);
+				}
+				if (rule1_1.at(i) == "3") {
+					rule1_1.insert(rule1_1.begin() + (i + 1), "C");
+					rule1_1.erase(rule1_1.begin() + i);
+				}
+				if (rule1_1.at(i) == "4") {
+					rule1_1.insert(rule1_1.begin() + (i + 1), "D");
+					rule1_1.erase(rule1_1.begin() + i);
+				}
+				if (rule1_1.at(i) == "5") {
+					rule1_1.insert(rule1_1.begin() + (i + 1), "E");
+					rule1_1.erase(rule1_1.begin() + i);
+				}
+			}
+			for (unsigned i = 0; i < rule1_2.size(); i ++) {
+				if (rule1_2.at(i) == "1") {
+					rule1_2.insert(rule1_2.begin() + (i+1), "A");
+					rule1_2.erase(rule1_2.begin() + i);
+				}
+				if (rule1_2.at(i) == "2") {
+					rule1_2.insert(rule1_2.begin() + (i + 1), "B");
+					rule1_2.erase(rule1_2.begin() + i);
+				}
+				if (rule1_2.at(i) == "3") {
+					rule1_2.insert(rule1_2.begin() + (i + 1), "C");
+					rule1_2.erase(rule1_2.begin() + i);
+				}
+				if (rule1_2.at(i) == "4") {
+					rule1_2.insert(rule1_2.begin() + (i + 1), "D");
+					rule1_2.erase(rule1_2.begin() + i);
+				}
+				if (rule1_2.at(i) == "5") {
+					rule1_2.insert(rule1_2.begin() + (i + 1), "E");
+					rule1_2.erase(rule1_2.begin() + i);
+				}
+			}
+			//2_1
+			for (unsigned i = 0; i < rule2_1.size(); i++) {
+				if (rule2_1.at(i) == "1") {
+					rule2_1.insert(rule2_1.begin() + (i + 1), "A");
+					rule2_1.erase(rule2_1.begin() + i);
+				}
+				if (rule2_1.at(i) == "2") {
+					rule2_1.insert(rule2_1.begin() + (i + 1), "B");
+					rule2_1.erase(rule2_1.begin() + i);
+				}
+				if (rule2_1.at(i) == "3") {
+					rule2_1.insert(rule2_1.begin() + (i + 1), "C");
+					rule2_1.erase(rule2_1.begin() + i);
+				}
+				if (rule2_1.at(i) == "4") {
+					rule2_1.insert(rule2_1.begin() + (i + 1), "D");
+					rule2_1.erase(rule2_1.begin() + i);
+				}
+				if (rule2_1.at(i) == "5") {
+					rule2_1.insert(rule2_1.begin() + (i + 1), "E");
+					rule2_1.erase(rule2_1.begin() + i);
+				}
+			}
+			//1-3
+			for (unsigned i = 0; i < rule1_3.size(); i++) {
+				if (rule1_3.at(i) == "1") {
+					rule1_3.insert(rule1_3.begin() + (i + 1), "A");
+					rule1_3.erase(rule1_3.begin() + i);
+				}
+				if (rule1_3.at(i) == "2") {
+					rule1_3.insert(rule1_3.begin() + (i + 1), "B");
+					rule1_3.erase(rule1_3.begin() + i);
+				}
+				if (rule1_3.at(i) == "3") {
+					rule1_3.insert(rule1_3.begin() + (i + 1), "C");
+					rule1_3.erase(rule1_3.begin() + i);
+				}
+				if (rule1_3.at(i) == "4") {
+					rule1_3.insert(rule1_3.begin() + (i + 1), "D");
+					rule1_3.erase(rule1_3.begin() + i);
+				}
+				if (rule1_3.at(i) == "5") {
+					rule1_3.insert(rule1_3.begin() + (i + 1), "E");
+					rule1_3.erase(rule1_3.begin() + i);
+				}
+			}
+			//2-2
+			for (unsigned i = 0; i < rule2_2.size(); i++) {
+				if (rule2_2.at(i) == "1") {
+					rule2_2.insert(rule2_2.begin() + (i + 1), "A");
+					rule2_2.erase(rule2_2.begin() + i);
+				}
+				if (rule2_2.at(i) == "2") {
+					rule2_2.insert(rule2_2.begin() + (i + 1), "B");
+					rule2_2.erase(rule2_2.begin() + i);
+				}
+				if (rule2_2.at(i) == "3") {
+					rule2_2.insert(rule2_2.begin() + (i + 1), "C");
+					rule2_2.erase(rule2_2.begin() + i);
+				}
+				if (rule2_2.at(i) == "4") {
+					rule2_2.insert(rule2_2.begin() + (i + 1), "D");
+					rule2_2.erase(rule2_2.begin() + i);
+				}
+				if (rule2_2.at(i) == "5") {
+					rule2_2.insert(rule2_2.begin() + (i + 1), "E");
+					rule2_2.erase(rule2_2.begin() + i);
+				}
+			}
+
+			//3-1
+			for (unsigned i = 0; i < rule3_1.size(); i++) {
+				if (rule3_1.at(i) == "1") {
+					rule3_1.insert(rule3_1.begin() + (i + 1), "A");
+					rule3_1.erase(rule3_1.begin() + i);
+				}
+				if (rule3_1.at(i) == "2") {
+					rule3_1.insert(rule3_1.begin() + (i + 1), "B");
+					rule3_1.erase(rule3_1.begin() + i);
+				}
+				if (rule3_1.at(i) == "3") {
+					rule3_1.insert(rule3_1.begin() + (i + 1), "C");
+					rule3_1.erase(rule3_1.begin() + i);
+				}
+				if (rule3_1.at(i) == "4") {
+					rule3_1.insert(rule3_1.begin() + (i + 1), "D");
+					rule3_1.erase(rule3_1.begin() + i);
+				}
+				if (rule3_1.at(i) == "5") {
+					rule3_1.insert(rule3_1.begin() + (i + 1), "E");
+					rule3_1.erase(rule3_1.begin() + i);
+				}
+			}
+		}
+		if (ABCexist == true) {
+			for (unsigned i = 0; i < rule1_1.size(); i++) {
+				if (rule1_1.at(i) == "0") {
+					rule1_1.insert(rule1_1.begin() + (i + 1), "ABC");
+					rule1_1.erase(rule1_1.begin() + i);
+				}
+			}
+			for (unsigned i = 0; i < rule1_2.size(); i++) {
+				if (rule1_2.at(i) == "0") {
+					rule1_2.insert(rule1_2.begin() + (i + 1), "ABC");
+					rule1_2.erase(rule1_2.begin() + i);
+				}
+			}
+			for (unsigned i = 0; i < rule2_1.size(); i++) {
+				if (rule2_1.at(i) == "0") {
+					rule2_1.insert(rule2_1.begin() + (i + 1), "ABC");
+					rule2_1.erase(rule2_1.begin() + i);
+				}
+			}
+			for (unsigned i = 0; i < rule1_3.size(); i++) {
+				if (rule1_3.at(i) == "0") {
+					rule1_3.insert(rule1_3.begin() + (i + 1), "ABC");
+					rule1_3.erase(rule1_3.begin() + i);
+				}
+			}
+			for (unsigned i = 0; i < rule2_2.size(); i++) {
+				if (rule2_2.at(i) == "0") {
+					rule2_2.insert(rule2_2.begin() + (i + 1), "ABC");
+					rule2_2.erase(rule2_2.begin() + i);
+				}
+			}
+			for (unsigned i = 0; i < rule3_1.size(); i++) {
+				if (rule3_1.at(i) == "0") {
+					rule3_1.insert(rule3_1.begin() + (i + 1), "ABC");
+					rule3_1.erase(rule3_1.begin() + i);
+				}
+			}
+
+		}
+
+
 		for (unsigned i = 0; i < rule1_1.size(); i+=2) {
 			cout << rule1_1.at(i) << "=>" << rule1_1.at(i + 1) << endl;
+			out<< rule1_1.at(i) << "=>" << rule1_1.at(i + 1) << endl;
 		}
 		for (unsigned i = 0; i < rule1_2.size(); i+=3) {
 			cout << rule1_2.at(i) << "=>{" << rule1_2.at(i + 1) <<"," << rule1_2.at(i + 2) <<"}"<< endl;
-			}
+			out<< rule1_2.at(i) << "=>{" << rule1_2.at(i + 1) << "," << rule1_2.at(i + 2) << "}" << endl;
+		}
 		for (unsigned i = 0; i < rule2_1.size(); i += 3) {
 			cout <<"{"<<rule2_1.at(i) << "," << rule2_1.at(i + 1) << "}=>" << rule2_1.at(i + 2)<< endl;
+			out<< "{" << rule2_1.at(i) << "," << rule2_1.at(i + 1) << "}=>" << rule2_1.at(i + 2) << endl;
 		}
-		//三個一組
+		//四個一組
 		for (unsigned i = 0; i < rule1_3.size(); i += 4) {
 			cout << rule1_3.at(i) << "=>{" << rule1_3.at(i + 1) << "," << rule1_3.at(i + 2) <<","<< rule1_3.at(i + 3)<< "}" << endl;
+			out<< rule1_3.at(i) << "=>{" << rule1_3.at(i + 1) << "," << rule1_3.at(i + 2) << "," << rule1_3.at(i + 3) << "}" << endl;
 		}
 		for (unsigned i = 0; i < rule2_2.size(); i += 4) {
 			cout << "{" << rule2_2.at(i) << "," << rule2_2.at(i + 1) << "}=>{" << rule2_2.at(i + 2) << "," << rule2_2.at(i + 3) <<"}"<< endl;
+			out<< "{" << rule2_2.at(i) << "," << rule2_2.at(i + 1) << "}=>{" << rule2_2.at(i + 2) << "," << rule2_2.at(i + 3) << "}" << endl;
 		}
 		for (unsigned i = 0; i < rule3_1.size(); i += 4) {
 			cout << "{" << rule2_2.at(i) << "," << rule2_2.at(i + 1) <<","<< rule2_2.at(i + 2) << "}=>"<< rule2_2.at(i + 3) << endl;
+			out<< "{" << rule2_2.at(i) << "," << rule2_2.at(i + 1) << "," << rule2_2.at(i + 2) << "}=>" << rule2_2.at(i + 3) << endl;
 		}
 
 
