@@ -1,28 +1,30 @@
 #include <iostream>
 #include<algorithm>
+#include<ctime>
+#include<cstdlib>
 using namespace std;
 
-int E24103079(const vector < vector<char> > &, char, char);
+int E24103078(const vector < vector<char> > &, char, char);
 vector<int> available(const vector < vector<char> > &table);
 void remove(vector < vector<char> > &table, int row, int col);
 void put(vector < vector<char> > &table, int row, int col, char disk);
 int heuristic(const vector < vector<char> >&b, int row, int col, char me);
 int alphabeta(int node, vector < vector<char> >&table, int depth, int alpha, int beta, bool me, char disk);
-void addScore(int &, int,bool);
-int E24103079(const vector < vector<char> > &b, char mydisc, char yourdisc) {
+void addScore(int &, int, bool);
+int E24103078(const vector < vector<char> > &b, char mydisc, char yourdisc) {
 	static const char me = mydisc; //Record the disc type main function assigns for this AI. It never changes once assigned
 	static const char opponent = yourdisc; //Record the disc type main function assigns for another AI. It never changes once assigned
 	//'O'
 	//檢查自己先攻還後攻
 	//return 6;
-	
-	int first =0; //'o' first=false 'x'
+
+	int first = 0; //'o' first=false 'x'
 	int column = -1;
 	int point = 0;
 	int max = 0;
 	//Write your AI here
 	vector < vector<char> > table = b; //暫時用的table用來做minimax
-	vector<int>valid= available(table);
+	vector<int>valid = available(table);
 	//若為先下 則下最中間
 	int n = 0;
 	int check = 0;
@@ -39,93 +41,14 @@ int E24103079(const vector < vector<char> > &b, char mydisc, char yourdisc) {
 	//判斷自己是誰
 	//cout << check << endl;
 	//cout << disk << endl;
-	if (check == 42) {//1st round
+	if (valid.at(3)!=0&&check==42) {//1st round
 		return 3;
 	}
 	//先攻
-/*	char plan='a';//a為minmax b c為random
-	if (disk == 'O') {
-		
-		//2nd round
-		if (check == 40) {
-			if (valid.at(3) == 4) {//best for opponent
-				plan = 'a';
-				return 3;
-			}
-			if (valid.at(2) == 5) {
-				plan = 'b';
-				return 3;
-			}
-			if (valid.at(4) == 5) {
-				plan = 'b';
-				return 3;
-			}
-			if (valid.at(1) == 5)
-				return 5;
-			if (valid.at(5) == 5)
-				return 1;
-			if (valid.at(0) == 5 || valid.at(6) == 5) {
-				plan = 'c';
-				return 3;//對手放的太鳥就放自己頭上
-			}
-		}
-		if (check == 38) {//第三round
-			if (valid.at(3) == 2) {//plan a
-				return 3;
-			}
-			if (valid.at(2) == 5) {
-				return 2;
-			}
-			if (valid.at(4) == 5) {
-				return 4;
-			}
-			if (valid.at(1) == 5) {
-				return 3;
-			}
-			if (valid.at(5) == 5) {
-				return 3;
-			}
-			if (valid.at(0) == 5) {
-				return 0;
-			}
-			if (valid.at(6) == 5) {
-				return 6;
-			}
 
-		}
-		if (check == 36) {//第4round
-			if (valid.at(3) == 0) {//plan a
-				return 2;
-			}
-		}
-		if (check == 34) {
-			if (plan == 'a'&&valid.at(1) == 5) {//對手最好
-				return 5;
-			}
-			if (plan == 'a'&&valid.at(4) == 5) {//對手第2好
-				return 4;
-			}
-			if (plan == 'a'&&valid.at(2) == 4) {//win
-				return 1;
-			}		
-			if (plan == 'a'&&valid.at(6) == 5) {//win
-				return 4;
-			}
-			if (plan == 'a'&&valid.at(5) == 5) {//win
-				return 2;
-			}
-			if (plan == 'a'&&valid.at(0) == 5) {//下角落的話竟向 win
-				return 4;
-			}
-		}
-		if (check == 32) {
-
-		}
-	}*/
-	
 	int depth = 3;
 	for (int node = 0; node <= 6; node++) {
-		point = alphabeta(node,table, depth-1, -1000000, 1000000,true, disk);
+		point = alphabeta(node, table, depth - 1, -1000000, 1000000, true, disk);
 		if (point > max) {
 			max = point;
 			column = node;
@@ -151,26 +74,52 @@ vector<int> available(const vector < vector<char> > &table) {
 }
 
 void put(vector < vector<char> > &tmpTable, int row, int col, char disk) {
-	cout <<"put:"<< row <<" "<<col << endl;
+//	cout << "put:" << row << " " << col << endl;
+	if (row > 5 || row < 0 || col>6 || col < 0) {
+		return;
+	}
 	tmpTable[row][col] = disk;
+	/*for (int i = 0; i <= 5; i++) {
+		for (int j = 0; j <= 6; j++) {
+			if (tmpTable[i][j] == '\0') {
+				cout << 1;
+			}
+			cout << tmpTable[i][j];
+		}
+		cout << endl;
+	}*/
 	return;
 }
 void remove(vector < vector<char> > &table, int row, int col) {
-	cout << "remove=>row" << row << " " << "col" << col << endl;
+	if (row > 5 || row < 0 || col>6 || col < 0) {
+		return;
+	}
+
 	table[row][col] = '\0';
+	/*for (int i = 0; i <= 5; i++) {
+		for (int j = 0; j <= 6; j++) {
+			if (table[i][j] == '\0') {
+				cout << 1;
+			}
+			cout << table[i][j];
+		}
+		cout << endl;
+	}*/
 	return;
 
 }
 
-int heuristic(const vector < vector<char> >&table, int row, int col, char disk ) {
+int heuristic(const vector < vector<char> >&table, int row, int col, char disk) {
 	//檢查下這一步棋對勝利有沒有幫助
-	cout << "heuristic:(" << row << "," << col << ")" << endl;
+	//cout << "heuristic:(" << row << "," << col << ")" << endl;
+	if (row > 5 || row < 0 || col < 0 || col>6) {
+		return 0;
+	}
 	int score = 0;
 	int tmp = -1;
 	int tmpCol = col;
 	int my = -1;
 	int oppo = 0;
-	//check上下左右斜線
 	bool turn = false;
 	for (int i = 0; i <= 3; i++) { //右左
 		//cout << "check:(" << row << "," << tmpCol << ")" << endl;
@@ -184,14 +133,14 @@ int heuristic(const vector < vector<char> >&table, int row, int col, char disk )
 			}
 
 		}
-		if (table[row][tmpCol] == disk&&turn==false) {
+		if (table[row][tmpCol] == disk && turn == false) {
 			tmp++;
 			tmpCol++;
 			continue;
 		}
-		if ((tmpCol == 6 || table[row][tmpCol] != disk)&&turn==false) {
+		if ((tmpCol == 6 || table[row][tmpCol] != disk) && turn == false) {
 			turn = true;
-			tmpCol = tmpCol -(i+1);
+			tmpCol = tmpCol - (i + 1);
 			continue;
 		}
 		if (table[row][tmpCol] == disk && turn == true) {
@@ -205,7 +154,7 @@ int heuristic(const vector < vector<char> >&table, int row, int col, char disk )
 	turn = false;
 	for (int i = 0; i <= 3; i++) { //左到右
 	//	cout << "check:(" << row << "," << tmpCol << ")" << endl;
-		if (tmpCol < 0|| tmpCol>6) {
+		if (tmpCol < 0 || tmpCol>6) {
 			if (turn == false) {
 				turn = true;
 				tmpCol = tmpCol + (i + 1);
@@ -219,7 +168,7 @@ int heuristic(const vector < vector<char> >&table, int row, int col, char disk )
 			tmpCol--;
 			continue;
 		}
-		if ((tmpCol == 0|| table[row][tmpCol] != disk) && turn == false) {
+		if ((tmpCol == 0 || table[row][tmpCol] != disk) && turn == false) {
 			turn = true;
 			tmpCol = tmpCol + (i + 1);
 			continue;
@@ -310,7 +259,7 @@ int heuristic(const vector < vector<char> >&table, int row, int col, char disk )
 	tmpRow = row;
 	for (int i = 0; i <= 3; i++) { //先右上再左下
 	//	cout << "check:(" << tmpRow << "," << tmpCol << ")" << endl;
-		if (tmpCol < 0 || tmpCol>6 || tmpRow < 0|| tmpRow>5) {
+		if (tmpCol < 0 || tmpCol>6 || tmpRow < 0 || tmpRow>5) {
 			if (turn == false) {
 				turn = true;
 				tmpCol = tmpCol - (i + 1);
@@ -330,7 +279,7 @@ int heuristic(const vector < vector<char> >&table, int row, int col, char disk )
 			tmpRow--;
 			continue;
 		}
-		if ((tmpCol == 6|| tmpRow ==0 || table[tmpRow][tmpCol] != disk) && turn == false) {
+		if ((tmpCol == 6 || tmpRow == 0 || table[tmpRow][tmpCol] != disk) && turn == false) {
 			turn = true;
 			tmpCol = tmpCol - (i + 1);
 			tmpRow = tmpRow + (i + 1);
@@ -343,7 +292,7 @@ int heuristic(const vector < vector<char> >&table, int row, int col, char disk )
 			continue;
 		}
 	}
-//	cout << "tmp" << tmp << endl;
+	//	cout << "tmp" << tmp << endl;
 
 	turn = false;
 	tmpCol = col;
@@ -384,7 +333,7 @@ int heuristic(const vector < vector<char> >&table, int row, int col, char disk )
 	my = max(my, tmp);
 	//cout << "my:" << my << endl; //my=0代表只有自己
 	addScore(score, my, true);
-	
+
 	//右下左上
 	my = -1;
 	tmp = -1;
@@ -475,18 +424,18 @@ int heuristic(const vector < vector<char> >&table, int row, int col, char disk )
 	else {
 		disk = 'O';
 	}
-//	cout << disk << endl;
+	//	cout << disk << endl;
 	tmp = 0;
 	oppo = 0;
 	tmpCol = col + 1;
 	turn = false;
-//	cout << "右到左" << endl;
+	//	cout << "右到左" << endl;
 	for (int i = 1; i <= 3; i++) { //右左
 	//	cout << "check:(" << row << "," << tmpCol << ")" << endl;
 		if (tmpCol < 0 || tmpCol>6) {
 			if (turn == false) {
 				turn = true;
-				tmpCol = tmpCol - (i+1);
+				tmpCol = tmpCol - (i + 1);
 			}
 			else {
 				break;
@@ -500,7 +449,7 @@ int heuristic(const vector < vector<char> >&table, int row, int col, char disk )
 		}
 		if ((tmpCol == 6 || table[row][tmpCol] != disk) && turn == false) {
 			turn = true;
-			tmpCol = tmpCol - (i+1);
+			tmpCol = tmpCol - (i + 1);
 			continue;
 		}
 		if (table[row][tmpCol] == disk && turn == true) {
@@ -509,10 +458,10 @@ int heuristic(const vector < vector<char> >&table, int row, int col, char disk )
 			continue;
 		}
 	}
-//	cout << "tmp" << tmp << endl;
-	tmpCol = col-1;
+	//	cout << "tmp" << tmp << endl;
+	tmpCol = col - 1;
 	turn = false;
-//	cout <<"左到右"<<endl;
+	//	cout <<"左到右"<<endl;
 	for (int i = 1; i <= 3; i++) { //左到右
 //		cout << "check:(" << row << "," << tmpCol << ")" << endl;
 		if (tmpCol < 0 || tmpCol>6) {
@@ -547,8 +496,8 @@ int heuristic(const vector < vector<char> >&table, int row, int col, char disk )
 	turn = false;
 	tmp = 0;
 	oppo = 0;
-	tmpRow = row+1;
-//	cout << "下到上" << endl;
+	tmpRow = row + 1;
+	//	cout << "下到上" << endl;
 	for (int i = 1; i <= 3; i++) { //下到上
 //		cout << "check:(" << tmpRow << "," << col << ")" << endl;
 		if (tmpRow < 0 || tmpRow>5) {//防越界
@@ -581,7 +530,7 @@ int heuristic(const vector < vector<char> >&table, int row, int col, char disk )
 
 	turn = false;
 	//cout << "上到下" << endl;
-	tmpRow = row-1;
+	tmpRow = row - 1;
 	for (int i = 1; i <= 3; i++) { //上到下
 	//	cout << "check:(" << tmpRow << "," << col << ")" << endl;
 		if (tmpRow < 0 || tmpRow>5) {//防越界
@@ -611,15 +560,15 @@ int heuristic(const vector < vector<char> >&table, int row, int col, char disk )
 		}
 	}
 	oppo = max(oppo, tmp);
-//	cout << "oppo:" << oppo << endl; //my=0代表只有自己
+	//	cout << "oppo:" << oppo << endl; //my=0代表只有自己
 	addScore(score, oppo, false);
 
 	//右上左下
 	oppo = 0;
 	tmp = 0;
 	turn = false;
-	tmpCol = col+1;
-	tmpRow = row-1;
+	tmpCol = col + 1;
+	tmpRow = row - 1;
 	//cout << "先右上再左下" << endl;
 	for (int i = 1; i <= 3; i++) { //先右上再左下
 //		cout << "check:(" << tmpRow << "," << tmpCol << ")" << endl;
@@ -658,8 +607,8 @@ int heuristic(const vector < vector<char> >&table, int row, int col, char disk )
 	}
 	//cout << "tmp" << tmp << endl;
 	turn = false;
-	tmpCol = col-1;
-	tmpRow = row+1;
+	tmpCol = col - 1;
+	tmpRow = row + 1;
 	//cout << "先左下再右上" << endl;;
 	for (int i = 1; i <= 3; i++) { //先左下再右上
 	//	cout << "check:(" << tmpRow << "," << tmpCol << ")" << endl;
@@ -702,8 +651,8 @@ int heuristic(const vector < vector<char> >&table, int row, int col, char disk )
 	oppo = 0;
 	tmp = 0;
 	turn = false;
-	tmpCol = col+1;
-	tmpRow = row+1;
+	tmpCol = col + 1;
+	tmpRow = row + 1;
 	//cout << "先右下再左上" << endl;
 	for (int i = 1; i <= 3; i++) { //先右下再左上
 //		cout << "check:(" << tmpRow << "," << tmpCol << ")" << endl;
@@ -740,8 +689,8 @@ int heuristic(const vector < vector<char> >&table, int row, int col, char disk )
 	}
 
 	turn = false;
-	tmpCol = col-1;
-	tmpRow = row-1;
+	tmpCol = col - 1;
+	tmpRow = row - 1;
 	//cout << "先左上再右下" << endl;
 	for (int i = 1; i <= 3; i++) { //先左上再右下
 //		cout << "check:(" << tmpRow << "," << tmpCol << ")" << endl;
@@ -788,8 +737,8 @@ int heuristic(const vector < vector<char> >&table, int row, int col, char disk )
 }
 int alphabeta(int node, vector < vector<char> >&table, int depth, int alpha, int beta, bool me, char disk) {//me player=1 opponent=2
 	int value = 0;
-	int best=0;
-	int tmpVal=0;
+	int best = 0;
+	int tmpVal = 0;
 	vector<int>valid = available(table);//找可以放的地方
 	//擺放位置即為 valid.at(node),node
 	char opponentDisk;
@@ -797,11 +746,11 @@ int alphabeta(int node, vector < vector<char> >&table, int depth, int alpha, int
 		opponentDisk = 'X';
 	}
 	else {
-	opponentDisk = 'O';
+		opponentDisk = 'O';
 	}
-//	cout << "me?:" << me << endl;
-//	cout << "disk:" << disk << endl;
-//	cout << "opponentDisk:" << opponentDisk << endl;
+	//	cout << "me?:" << me << endl;
+	//	cout << "disk:" << disk << endl;
+	//	cout << "opponentDisk:" << opponentDisk << endl;
 
 
 	put(table, valid.at(node) - 1, node, disk);
@@ -814,32 +763,31 @@ int alphabeta(int node, vector < vector<char> >&table, int depth, int alpha, int
 			cout << table[i][j];
 		}
 		cout << endl;
-	}
-	cout << "印完拉" << endl;*/
-	
+	}*/
+
 	if (depth == 0) {
-		value= heuristic(table, valid.at(node)-1, node, disk);
-		remove(table, valid.at(node)-1, node);
-		cout << value << endl;
-		return value; //回傳他該有的分數
+		value = heuristic(table, valid.at(node) - 1, node, disk);
+		remove(table, valid.at(node) - 1, node);
+		return value; 
 	}
 	//Alpha is the maximum lower bound of possible solutions
 	//Beta is the minimum upper bound of possible solutions
+	int j;
+	srand(time(NULL));
+	j = rand() % 7;
 	int Row = valid.at(node) - 1;
 	if (me) {
 		value = -100000;
 		for (int i = 0; i <= 6; i++) {
-		//	cout << "i:" << i << endl;
-			tmpVal = alphabeta(i, table, depth - 1, alpha, beta, false, opponentDisk);
+			tmpVal = alphabeta(j, table, depth - 1, alpha, beta, false, opponentDisk);
 			if (value < tmpVal) {
 				value = tmpVal;
-				best = i;
+				best = j;
 			}
 			alpha = max(alpha, value); //若有比alpha大的可能就要替換 相對小於alpha的就可以無視
-			cout << "alpha:" << alpha << " beta:" << beta <<"depth"<<depth<< endl;
-			//第二round爆掉了 應該要把x拿掉 然後放到下一row
+			//cout << "alpha:" << alpha << " beta:" << beta << "depth" << depth << endl;
 			if (alpha >= beta) {
-				cout << "alpha>=beta" << endl;
+			//	cout << "alpha>=beta" << endl;
 				break;
 			}
 		}
@@ -852,17 +800,18 @@ int alphabeta(int node, vector < vector<char> >&table, int depth, int alpha, int
 		}
 	}
 	else {
+		srand(time(NULL));
+		j = rand() % 7;
 		value = 100000; //找對手極小
 		//for each child of node
 		for (int i = 0; i <= 6; i++) {
-			value = min(value, alphabeta(i, table, depth - 1, alpha, beta, true, opponentDisk));
+
+			value = min(value, alphabeta(j, table, depth - 1, alpha, beta, true, opponentDisk));
 			beta = min(beta, value);
-			cout << "alpha:" << alpha << " beta:" << beta << endl;
+		//	cout << "alpha:" << alpha << " beta:" << beta << endl;
 			if (beta <= alpha) {
-				cout << "beta <= alpha" << endl;
+			//	cout << "beta <= alpha" << endl;
 				vector<int>valid = available(table);
-				//remove(table, Row, node);
-				//remove(table, valid.at(node) - 1, node);
 				break;
 			}
 		}
@@ -875,36 +824,36 @@ int alphabeta(int node, vector < vector<char> >&table, int depth, int alpha, int
 		}
 	}
 	cout << best << endl;
+
 	return best;
+	
 }
 
 void addScore(int & score, int num, bool me) {
 	if (me) {
 		switch (num) {
-			case 1:
-				score += 10;
-				break;
-			case 2:
-				score += 100;
-				break;
-			case 3:
-				score += 1000;
-				break;
+		case 1:
+			score += 50;
+			break;
+		case 2:
+			score += 500;
+			break;
+		case 3:
+			score += 5000;
+			break;
 		}
 	}
 	else {
 		switch (num) {
 		case 1:
-			score -= 11;
+			score -= 51;
 			break;
 		case 2:
-			score -= 101;
+			score -= 501;
 			break;
 		case 3:
-			score -= 1001;
+			score -= 5001;
 			break;
 		}
 	}
-	//cout << "score" << score << endl;
-
 }
