@@ -1,688 +1,910 @@
-#include<iostream>
-#include<fstream>
-#include<string>
-#include<sstream>
+#include <iostream>
 #include<algorithm>
-#include<regex>
 using namespace std;
 
-int main() {
-	//regex_search防呆 0~1
-	double min_supp, min_conf;
-	int maxProduct = 5; //如果測資都不是數字 A~E
-	cout << "Insert min_supp:";
-	cin >> min_supp;
-	cout << "Insert min_conf:";
-	cin >> min_conf;
-
-	ifstream in("Dataset.txt", ios::in); //open file for input 唯讀
-	ofstream out("Dataset_Output.txt", ios::out); //open file for output 
-	if (!in) {
-		cerr << "File could not be opened" << endl;
-		exit(1);
-	}
-	//上面沒事
-	vector<int>code;
-	vector<vector<string>> buy;
-	vector<string>personalBuy;
-
-	vector<vector<int>>otherCount[6];
-	vector<int> count[20000];
-	string customer;
-	string product;
-	vector<string> base;
-	bool ABCexist = false;
-	buy.push_back(base);
-	//int customer = 1; //先暫時當顧客的計數器 但最好能用讀檔讀出來
-	//while讀到代號 先存起來
-	while (in >> customer) {
-		//先存代號 再把後面整串存起來 然後把 ,改成 space 再讀檔存入vector
-		code.push_back(stoi(customer));
-		//為了讀買家買了甚麼藥把逗號轉換成空格再用isstringstream重新讀一次(空格視為中斷)
-		in >> product;
-		int n = product.size();
-		for (int i = 0; i < n; i++) {
-			if (product[i] == ',') {
-				product[i] = ' ';		//消除逗號
-			}
-		}
-		istringstream stream(product);
-		string food;
-		//存個人買的東西
-		regex reg("(\\d{1,6})");
-		//存某東西有多少人買 用size即可得到出現次數
-		while (stream >> food) {
-			//cout << food << endl;
-			if (regex_match(food, reg)) {//數字放這裡
-				if (stoi(food) > maxProduct) {
-					maxProduct = stoi(food); //紀錄最大的商品
-				}
-				count[stoi(food)].push_back(stoi(customer));
-				personalBuy.push_back(food);
-			}
-			else {// A B C D E ABC放這
-				if( food=="ABC") {
-					count[0].push_back(stoi(customer));
-					ABCexist = true;
-					personalBuy.push_back("0");
-				}
-				else if (food == "A") {
-					count[1].push_back(stoi(customer));
-					personalBuy.push_back("1");
-				}
-				else if (food == "B") {
-					count[2].push_back(stoi(customer));
-					personalBuy.push_back("2");
-				}
-				else if (food == "C") {
-					count[3].push_back(stoi(customer));
-					personalBuy.push_back("3");
-				}
-				else if (food == "D") {
-					count[4].push_back(stoi(customer));
-					personalBuy.push_back("4");
-				}
-				else if (food == "E") {
-					count[5].push_back(stoi(customer));
-					personalBuy.push_back("5");
-				}
-			}
-		}
-		buy.push_back(personalBuy);
-		personalBuy.clear();
-	}
-
-	for (unsigned i = 0; i < buy.size(); i++) {
-		for (unsigned j = 0; j < buy[i].size(); j++) {
-			cout << buy[i].at(j) << " ";
-		}
-		cout << endl;
-	}
-	cout << "data storage finish" << endl;
-	double numOfCustomer = code.size();
-
-	vector<string>tmpFrequent;
-	vector<vector<string>> frequentPattern; //從1開始用 1存放一個的 2放兩個的
-	vector<int> tmpBuyer;
-	vector<vector<int>>buyer1;
-	vector<vector<int>>buyer2;
-	vector<vector<int>>buyer3;
-	vector<vector<int>>buyer4;
-	vector<vector<int>>buyer5;
-	vector<vector<int>>buyer6;
-
-
-	frequentPattern.push_back(base);
-	//判斷frequent pattern(1個商品)	
-	for (int i = 0; i <= maxProduct; i++) {
-		if (count[i].size() >= numOfCustomer * min_supp) {
-			//存frequent
-			tmpFrequent.push_back(to_string(i));
-			//存買家
-			for (unsigned j = 0; j < count[i].size(); j++) {
-				tmpBuyer.push_back(count[i].at(j));
-			}
-			buyer1.push_back(tmpBuyer);
-			tmpBuyer.clear();
-		}
-	}
+int E24103079(const vector < vector<char> > &, char, char);
+vector<int> available(const vector < vector<char> > &table);
+void remove(vector < vector<char> > &table, int row, int col);
+void put(vector < vector<char> > &table, int row, int col, char disk);
+int heuristic(const vector < vector<char> >&b, int row, int col, char me);
+int alphabeta(int node, vector < vector<char> >&table, int depth, int alpha, int beta, bool me, char disk);
+void addScore(int &, int,bool);
+int E24103079(const vector < vector<char> > &b, char mydisc, char yourdisc) {
+	static const char me = mydisc; //Record the disc type main function assigns for this AI. It never changes once assigned
+	static const char opponent = yourdisc; //Record the disc type main function assigns for another AI. It never changes once assigned
+	//'O'
+	//檢查自己先攻還後攻
+	//return 6;
 	
-	/*for (unsigned i = 0; i<buyer1.size(); i++) {
-			for (unsigned j = 0; j < buyer1[i].size(); j++) {
-				cout << buyer1[i].at(j) << " ";
-			}
-			cout << endl;
-	}*/
-	//frequentPattern[1].at(0)對應到 buyer1.at(0)
-	frequentPattern.push_back(tmpFrequent);
-	cout << endl;
-	cout << "frequentPattern[1]:" << endl;
-	for (unsigned i = 0; i < frequentPattern[1].size(); i++) {
-		cout << frequentPattern[1].at(i) << " ";
+	int first =0; //'o' first=false 'x'
+	int column = -1;
+	int point = 0;
+	int max = 0;
+	//Write your AI here
+	vector < vector<char> > table = b; //暫時用的table用來做minimax
+	vector<int>valid= available(table);
+	//若為先下 則下最中間
+	int n = 0;
+	int check = 0;
+	char disk;
+	for (auto a : valid) {
+		check += a;
 	}
-	cout << endl;
-	int num = 0;
-	vector<string>tmptmp;
-	//兩個數 從tmpFrequent取兩個出來比對
-	//要把合格的記錄下來 還有要記錄有誰買的
-	for (unsigned i = 0; i < frequentPattern[1].size(); i++) {
-		for (unsigned j = i + 1; j < frequentPattern[1].size(); j++) {
-			num = 0;
-			for (unsigned k = 0; k < count[stoi(frequentPattern[1].at(i))].size(); k++) {
-				for (unsigned m = 0; m < buy[count[stoi(frequentPattern[1].at(i))].at(k)].size(); m++) {
-					//cout << buy[count[stoi(frequentPattern[1].at(i))].at(k)].at(m) << " " << frequentPattern[1].at(j) << endl;
-					if (buy[count[stoi(frequentPattern[1].at(i))].at(k)].at(m) == frequentPattern[1].at(j)) {
-						tmpBuyer.push_back(count[stoi(frequentPattern[1].at(i))].at(k));//存買家 如果有通過的話買家資料要留
-						//沒有的話可以清掉
-						num++;
-					}
-				}
+	if (check % 2 == 0) {//先手
+		disk = 'O';
+	}
+	else {
+		disk = 'X';
+	}
+	//判斷自己是誰
+	//cout << check << endl;
+	//cout << disk << endl;
+	if (check == 42) {//1st round
+		return 3;
+	}
+	//先攻
+/*	char plan='a';//a為minmax b c為random
+	if (disk == 'O') {
+		
+		//2nd round
+		if (check == 40) {
+			if (valid.at(3) == 4) {//best for opponent
+				plan = 'a';
+				return 3;
 			}
-			if (num >= numOfCustomer * min_supp) {
-				//cout << frequentPattern[1].at(i) << " " << frequentPattern[1].at(j) << endl;
-				tmptmp.push_back(frequentPattern[1].at(i));
-				tmptmp.push_back(frequentPattern[1].at(j));
-				buyer2.push_back(tmpBuyer);
-				tmpBuyer.clear();
+			if (valid.at(2) == 5) {
+				plan = 'b';
+				return 3;
+			}
+			if (valid.at(4) == 5) {
+				plan = 'b';
+				return 3;
+			}
+			if (valid.at(1) == 5)
+				return 5;
+			if (valid.at(5) == 5)
+				return 1;
+			if (valid.at(0) == 5 || valid.at(6) == 5) {
+				plan = 'c';
+				return 3;//對手放的太鳥就放自己頭上
+			}
+		}
+		if (check == 38) {//第三round
+			if (valid.at(3) == 2) {//plan a
+				return 3;
+			}
+			if (valid.at(2) == 5) {
+				return 2;
+			}
+			if (valid.at(4) == 5) {
+				return 4;
+			}
+			if (valid.at(1) == 5) {
+				return 3;
+			}
+			if (valid.at(5) == 5) {
+				return 3;
+			}
+			if (valid.at(0) == 5) {
+				return 0;
+			}
+			if (valid.at(6) == 5) {
+				return 6;
+			}
+
+		}
+		if (check == 36) {//第4round
+			if (valid.at(3) == 0) {//plan a
+				return 2;
+			}
+		}
+		if (check == 34) {
+			if (plan == 'a'&&valid.at(1) == 5) {//對手最好
+				return 5;
+			}
+			if (plan == 'a'&&valid.at(4) == 5) {//對手第2好
+				return 4;
+			}
+			if (plan == 'a'&&valid.at(2) == 4) {//win
+				return 1;
+			}		
+			if (plan == 'a'&&valid.at(6) == 5) {//win
+				return 4;
+			}
+			if (plan == 'a'&&valid.at(5) == 5) {//win
+				return 2;
+			}
+			if (plan == 'a'&&valid.at(0) == 5) {//下角落的話竟向 win
+				return 4;
+			}
+		}
+		if (check == 32) {
+
+		}
+	}*/
+	
+	int depth = 3;
+	for (int node = 0; node <= 6; node++) {
+		point = alphabeta(node,table, depth-1, -1000000, 1000000,true, disk);
+		if (point > max) {
+			max = point;
+			column = node;
+		}
+	}
+	//Write your AI here
+	return column;
+}
+vector<int> available(const vector < vector<char> > &table) {
+	vector<int> valid;
+	for (int i = 0; i <= 6; i++) {
+		int tmp = 0;
+		for (int j = 5; j >= 0; j--) {
+			if (table[j][i] == '\0') {
+				tmp = j + 1;
+				//cout << j << endl;
+				break;
+			}
+		}
+		valid.push_back(tmp);
+	}
+	return valid;
+}
+
+void put(vector < vector<char> > &tmpTable, int row, int col, char disk) {
+	cout <<"put:"<< row <<" "<<col << endl;
+	tmpTable[row][col] = disk;
+	return;
+}
+void remove(vector < vector<char> > &table, int row, int col) {
+	cout << "remove=>row" << row << " " << "col" << col << endl;
+	table[row][col] = '\0';
+	return;
+
+}
+
+int heuristic(const vector < vector<char> >&table, int row, int col, char disk ) {
+	//檢查下這一步棋對勝利有沒有幫助
+	cout << "heuristic:(" << row << "," << col << ")" << endl;
+	int score = 0;
+	int tmp = -1;
+	int tmpCol = col;
+	int my = -1;
+	int oppo = 0;
+	//check上下左右斜線
+	bool turn = false;
+	for (int i = 0; i <= 3; i++) { //右左
+		//cout << "check:(" << row << "," << tmpCol << ")" << endl;
+		if (tmpCol < 0 || tmpCol>6) {
+			if (turn == false) {
+				turn = true;
+				tmpCol = tmpCol - (i + 1);
 			}
 			else {
-				tmpBuyer.clear();
+				break;
 			}
-		}
-	}
-	frequentPattern.push_back(tmptmp);
-	tmptmp.clear();
-	cout << endl;
-	/*for (unsigned i = 0; i < buyer2.size(); i++) {
-		for (unsigned j = 0; j < buyer2[i].size(); j++) {
-			cout << buyer2[i].at(j) << " ";
-		}
-		cout << endl;
-	}*/
-	for (unsigned i = 0; i < frequentPattern[2].size(); i += 2) {
-		cout << frequentPattern[2].at(i) << ",";
-		cout << frequentPattern[2].at(i + 1) << " ";
-	}
-	cout << endl;
 
-	//frequentPattern[2].at(0).at(1)對應到 buyer2[0]
-	// 0 1 /2 3 /4 5 /6 7
-	for (unsigned i = 0; i < frequentPattern[2].size(); i += 2) {
-		for (unsigned j = i + 2; j < frequentPattern[2].size(); j += 2) {
-			num = 0;
-			//先判斷是否能組成一組三個的
-			//兩個都過的話 就跳過 一個過的話選那一個
-			int check = 0;
-			string tmpProduct;
-			if (frequentPattern[2].at(j) == frequentPattern[2].at(i) || frequentPattern[2].at(j) == frequentPattern[2].at(i + 1)) {
-				check++;
-				tmpProduct = frequentPattern[2].at(j + 1);
+		}
+		if (table[row][tmpCol] == disk&&turn==false) {
+			tmp++;
+			tmpCol++;
+			continue;
+		}
+		if ((tmpCol == 6 || table[row][tmpCol] != disk)&&turn==false) {
+			turn = true;
+			tmpCol = tmpCol -(i+1);
+			continue;
+		}
+		if (table[row][tmpCol] == disk && turn == true) {
+			tmp++;
+			tmpCol--;
+			continue;
+		}
+	}
+	//cout << "tmp" << tmp << endl;
+	tmpCol = col;
+	turn = false;
+	for (int i = 0; i <= 3; i++) { //左到右
+	//	cout << "check:(" << row << "," << tmpCol << ")" << endl;
+		if (tmpCol < 0|| tmpCol>6) {
+			if (turn == false) {
+				turn = true;
+				tmpCol = tmpCol + (i + 1);
 			}
-			if (frequentPattern[2].at(j + 1) == frequentPattern[2].at(i) || frequentPattern[2].at(j) == frequentPattern[2].at(i + 1)) {
-				check++;
-				tmpProduct = frequentPattern[2].at(j);
+			else {
+				break;
 			}
-			if (check == 2) {
+		}
+		if (table[row][tmpCol] == disk && turn == false) {
+			my++;
+			tmpCol--;
+			continue;
+		}
+		if ((tmpCol == 0|| table[row][tmpCol] != disk) && turn == false) {
+			turn = true;
+			tmpCol = tmpCol + (i + 1);
+			continue;
+		}
+		if (table[row][tmpCol] == disk && turn == true) {
+			my++;
+			tmpCol++;
+			continue;
+		}
+	}
+	my = max(my, tmp);
+	//cout << "my:" << my << endl; //my=0代表只有自己
+	addScore(score, my, true);
+	//上下
+	turn = false;
+	tmp = -1;
+	my = -1;
+	int tmpRow = row;
+	for (int i = 0; i <= 3; i++) { //下到上
+	//	cout << "check:(" << tmpRow << "," << col << ")" << endl;
+		if (tmpRow < 0 || tmpRow>5) {//防越界
+			if (turn == false) {
+				turn = true;
+				tmpRow = tmpRow - (i + 1);
 				continue;
 			}
-			int skip = 0;
-			for (unsigned q = 0; q < tmptmp.size(); q += 3) {
-				if (frequentPattern[2].at(i) == tmptmp.at(q) || frequentPattern[2].at(i + 1) == tmptmp.at(q) || tmpProduct == tmptmp.at(q)) {
-					skip++;
-				}
-			}
-
-
-			if (skip != 3) {
-				for (unsigned k = 0; k < buyer2[i / 2].size(); k++) {//看買家有沒有買上面的東西
-					for (unsigned m = 0; m < buy[buyer2[i / 2].at(k)].size(); m++) {
-						if (buy[buyer2[i / 2].at(k)].at(m) == tmpProduct) {
-							num++;
-							tmpBuyer.push_back(buyer2[i / 2].at(k));
-						}
-					}
-				}
-				//如果重複就不可以存
-				if (num >= numOfCustomer * min_supp) {
-					tmptmp.push_back(frequentPattern[2].at(i));
-					tmptmp.push_back(frequentPattern[2].at(i + 1));
-					tmptmp.push_back(tmpProduct);
-					buyer3.push_back(tmpBuyer);
-					tmpBuyer.clear();
-				}
-				else {
-					tmpBuyer.clear();
-				}
+			else {
+				break;
 			}
 		}
+		if (table[tmpRow][col] == disk && turn == false) {
+			tmp++;
+			tmpRow++;
+			continue;
+		}
+		if ((tmpRow == 5 || table[tmpRow][col] != disk) && turn == false) {
+			turn = true;
+			tmpRow = tmpRow - (i + 1);
+			continue;
+		}
+		if (table[tmpRow][col] == disk && turn == true) {
+			tmp++;
+			tmpRow--;
+			continue;
+		}
 	}
-	frequentPattern.push_back(tmptmp);
-	tmptmp.clear();
-	for (unsigned i = 0; i < frequentPattern[3].size(); i += 3) {
-		cout << frequentPattern[3].at(i) << ",";
-		cout << frequentPattern[3].at(i + 1) << ",";
-		cout << frequentPattern[3].at(i + 2) << " ";
+	//cout << "tmp" << tmp << endl;
+	turn = false;
+	//cout << "上到下" << endl;
+	tmpRow = row;
+	for (int i = 0; i <= 3; i++) { //上到下
+	//	cout << "check:(" << tmpRow << "," << col << ")" << endl;
+		if (tmpRow < 0 || tmpRow>5) {//防越界
+			if (turn == false) {
+				turn = true;
+				tmpRow = tmpRow + (i + 1);
+				continue;
+			}
+			else {
+				break;
+			}
+		}
+		if (table[tmpRow][col] == disk && turn == false) {
+			my++;
+			tmpRow--;
+			continue;
+		}
+		if ((tmpRow == 0 || table[tmpRow][col] != disk) && turn == false) {
+			turn = true;
+			tmpRow = tmpRow + (i + 1);
+			continue;
+		}
+		if (table[tmpRow][col] == disk && turn == true) {
+			my++;
+			tmpRow++;
+			continue;
+		}
 	}
-	cout << endl;
+	my = max(my, tmp);
+	//cout << "my:" << my << endl; //my=0代表只有自己
+	addScore(score, my, true);
 
-	//轉變策略frequentPattern[3]去對frequentPattern[1] 先檢查有沒有重複 在看看有沒有通過
-	// 012/345/678
-	for (unsigned i = 0; i < buyer3.size(); i++) {
-		for (unsigned j = 0; j < buyer3[i].size(); j++) {
-			cout << buyer3[i].at(j) << " ";
+	//右上左下
+	my = -1;
+	tmp = -1;
+	turn = false;
+	tmpCol = col;
+	tmpRow = row;
+	for (int i = 0; i <= 3; i++) { //先右上再左下
+	//	cout << "check:(" << tmpRow << "," << tmpCol << ")" << endl;
+		if (tmpCol < 0 || tmpCol>6 || tmpRow < 0|| tmpRow>5) {
+			if (turn == false) {
+				turn = true;
+				tmpCol = tmpCol - (i + 1);
+				tmpRow = tmpRow + (i + 1);
+				continue;
+				if (tmpCol < 0 || tmpCol>6 || tmpRow < 0 || tmpRow>5)//轉完後可能越界
+					break;
+
+			}
+			else {
+				break;
+			}
+		}
+		if (table[tmpRow][tmpCol] == disk && turn == false) {
+			tmp++;
+			tmpCol++;
+			tmpRow--;
+			continue;
+		}
+		if ((tmpCol == 6|| tmpRow ==0 || table[tmpRow][tmpCol] != disk) && turn == false) {
+			turn = true;
+			tmpCol = tmpCol - (i + 1);
+			tmpRow = tmpRow + (i + 1);
+			continue;
+		}
+		if (table[tmpRow][tmpRow] == disk && turn == true) {
+			tmp++;
+			tmpCol--;
+			tmpRow++;
+			continue;
+		}
+	}
+//	cout << "tmp" << tmp << endl;
+
+	turn = false;
+	tmpCol = col;
+	tmpRow = row;
+	for (int i = 0; i <= 3; i++) { //先左下再右上
+	//	cout << "check:(" << tmpRow << "," << tmpCol << ")" << endl;
+		if (tmpCol < 0 || tmpCol>6 || tmpRow < 0 || tmpRow>5) {
+			if (turn == false) {
+				turn = true;
+				tmpCol = tmpCol + (i + 1);
+				tmpRow = tmpRow - (i + 1);
+			}
+			else {
+				break;
+			}
+			if (tmpCol < 0 || tmpCol>6 || tmpRow < 0 || tmpRow>5)//轉完後可能越界
+				break;
+		}
+		if (table[tmpRow][tmpCol] == disk && turn == false) {
+			my++;
+			tmpCol--;
+			tmpRow++;
+			continue;
+		}
+		if ((tmpCol == 0 || tmpRow == 5 || table[tmpRow][tmpCol] != disk) && turn == false) {
+			turn = true;
+			tmpCol = tmpCol + (i + 1);
+			tmpRow = tmpRow - (i + 1);
+			continue;
+		}
+		if (table[tmpRow][tmpCol] == disk && turn == true) {
+			my++;
+			tmpCol++;
+			tmpRow--;
+			continue;
+		}
+	}
+	my = max(my, tmp);
+	//cout << "my:" << my << endl; //my=0代表只有自己
+	addScore(score, my, true);
+	
+	//右下左上
+	my = -1;
+	tmp = -1;
+	turn = false;
+	tmpCol = col;
+	tmpRow = row;
+	for (int i = 0; i <= 3; i++) { //先右下再左上
+	//	cout << "check:(" << tmpRow << "," << tmpCol << ")" << endl;
+		if (tmpCol < 0 || tmpCol>6 || tmpRow < 0 || tmpRow>5) {
+			if (turn == false) {
+				turn = true;
+				tmpCol = tmpCol - (i + 1);
+				tmpRow = tmpRow - (i + 1);
+			}
+			else {
+				break;
+			}
+			if (tmpCol < 0 || tmpCol>6 || tmpRow < 0 || tmpRow>5)//轉完後可能越界
+				break;
+		}
+		if (table[tmpRow][tmpCol] == disk && turn == false) {
+			tmp++;
+			tmpCol++;
+			tmpRow++;
+			continue;
+		}
+		if ((tmpCol == 6 || tmpRow == 5 || table[tmpRow][tmpCol] != disk) && turn == false) {
+			turn = true;
+			tmpCol = tmpCol - (i + 1);
+			tmpRow = tmpRow - (i + 1);
+			continue;
+		}
+		if (table[row][tmpRow] == disk && turn == true) {
+			tmp++;
+			tmpCol--;
+			tmpRow--;
+			continue;
+		}
+	}
+	//cout << "tmp" << tmp << endl;
+	turn = false;
+	tmpCol = col;
+	tmpRow = row;
+	for (int i = 0; i <= 3; i++) { //先左上再右下
+	//	cout << "check:(" << tmpRow << "," << tmpCol << ")" << endl;
+		if (tmpCol < 0 || tmpCol>6 || tmpRow < 0 || tmpRow>5) {
+			if (turn == false) {
+				turn = true;
+				tmpCol = tmpCol + (i + 1);
+				tmpRow = tmpRow + (i + 1);
+			}
+			else {
+				break;
+			}
+			if (tmpCol < 0 || tmpCol>6 || tmpRow < 0 || tmpRow>5)//轉完後可能越界
+				break;
+		}
+		if (table[tmpRow][tmpCol] == disk && turn == false) {
+			my++;
+			tmpCol--;
+			tmpRow--;
+			continue;
+		}
+		if ((tmpCol == 0 || tmpRow == 0 || table[tmpRow][tmpCol] != disk) && turn == false) {
+			turn = true;
+			tmpCol = tmpCol + (i + 1);
+			tmpRow = tmpRow + (i + 1);
+			continue;
+		}
+		if (table[tmpRow][tmpCol] == disk && turn == true) {
+			my++;
+			tmpCol++;
+			tmpRow++;
+			continue;
+		}
+	}
+	my = max(my, tmp);
+	//cout << "my:" << my << endl; //my=0代表只有自己
+	addScore(score, my, true);
+	//cout << "總分" << score << endl;
+	//換成算敵人了喔!!!!!!!!!!!!!!!
+	//換成算敵人了喔!!!!!!!!!!!!!!!
+	//換成算敵人了喔!!!!!!!!!!!!!!!
+
+	if (disk == 'O') {
+		disk = 'X';
+	}
+	else {
+		disk = 'O';
+	}
+//	cout << disk << endl;
+	tmp = 0;
+	oppo = 0;
+	tmpCol = col + 1;
+	turn = false;
+//	cout << "右到左" << endl;
+	for (int i = 1; i <= 3; i++) { //右左
+	//	cout << "check:(" << row << "," << tmpCol << ")" << endl;
+		if (tmpCol < 0 || tmpCol>6) {
+			if (turn == false) {
+				turn = true;
+				tmpCol = tmpCol - (i+1);
+			}
+			else {
+				break;
+			}
+
+		}
+		if (table[row][tmpCol] == disk && turn == false) {
+			tmp++;
+			tmpCol++;
+			continue;
+		}
+		if ((tmpCol == 6 || table[row][tmpCol] != disk) && turn == false) {
+			turn = true;
+			tmpCol = tmpCol - (i+1);
+			continue;
+		}
+		if (table[row][tmpCol] == disk && turn == true) {
+			tmp++;
+			tmpCol--;
+			continue;
+		}
+	}
+//	cout << "tmp" << tmp << endl;
+	tmpCol = col-1;
+	turn = false;
+//	cout <<"左到右"<<endl;
+	for (int i = 1; i <= 3; i++) { //左到右
+//		cout << "check:(" << row << "," << tmpCol << ")" << endl;
+		if (tmpCol < 0 || tmpCol>6) {
+			if (turn == false) {
+				turn = true;
+				tmpCol = tmpCol + (i + 1);
+			}
+			else {
+				break;
+			}
+		}
+		if (table[row][tmpCol] == disk && turn == false) {
+			oppo++;
+			tmpCol--;
+			continue;
+		}
+		if ((tmpCol == 0 || table[row][tmpCol] != disk) && turn == false) {
+			turn = true;
+			tmpCol = tmpCol + (i + 1);
+			continue;
+		}
+		if (table[row][tmpCol] == disk && turn == true) {
+			oppo++;
+			tmpCol++;
+			continue;
+		}
+	}
+	oppo = max(oppo, tmp);
+	//cout << "oppo:" << oppo << endl; //my=0代表只有自己
+	addScore(score, oppo, false);
+	//上下
+	turn = false;
+	tmp = 0;
+	oppo = 0;
+	tmpRow = row+1;
+//	cout << "下到上" << endl;
+	for (int i = 1; i <= 3; i++) { //下到上
+//		cout << "check:(" << tmpRow << "," << col << ")" << endl;
+		if (tmpRow < 0 || tmpRow>5) {//防越界
+			if (turn == false) {
+				turn = true;
+				tmpRow = tmpRow - (i + 1);
+				continue;
+			}
+			else {
+				break;
+			}
+		}
+		if (table[tmpRow][col] == disk && turn == false) {
+			tmp++;
+			tmpRow++;
+			continue;
+		}
+		if ((tmpRow == 5 || table[tmpRow][col] != disk) && turn == false) {
+			turn = true;
+			tmpRow = tmpRow - (i + 1);
+			continue;
+		}
+		if (table[tmpRow][col] == disk && turn == true) {
+			tmp++;
+			tmpRow--;
+			continue;
+		}
+	}
+	//cout << "tmp" << tmp << endl;
+
+	turn = false;
+	//cout << "上到下" << endl;
+	tmpRow = row-1;
+	for (int i = 1; i <= 3; i++) { //上到下
+	//	cout << "check:(" << tmpRow << "," << col << ")" << endl;
+		if (tmpRow < 0 || tmpRow>5) {//防越界
+			if (turn == false) {
+				turn = true;
+				tmpRow = tmpRow + (i + 1);
+				continue;
+			}
+			else {
+				break;
+			}
+		}
+		if (table[tmpRow][col] == disk && turn == false) {
+			oppo++;
+			tmpRow--;
+			continue;
+		}
+		if ((tmpRow == 0 || table[tmpRow][col] != disk) && turn == false) {
+			turn = true;
+			tmpRow = tmpRow + (i + 1);
+			continue;
+		}
+		if (table[tmpRow][col] == disk && turn == true) {
+			oppo++;
+			tmpRow++;
+			continue;
+		}
+	}
+	oppo = max(oppo, tmp);
+//	cout << "oppo:" << oppo << endl; //my=0代表只有自己
+	addScore(score, oppo, false);
+
+	//右上左下
+	oppo = 0;
+	tmp = 0;
+	turn = false;
+	tmpCol = col+1;
+	tmpRow = row-1;
+	//cout << "先右上再左下" << endl;
+	for (int i = 1; i <= 3; i++) { //先右上再左下
+//		cout << "check:(" << tmpRow << "," << tmpCol << ")" << endl;
+		if (tmpCol < 0 || tmpCol>6 || tmpRow < 0 || tmpRow>5) {
+			if (turn == false) {
+				turn = true;
+				tmpCol = tmpCol - (i + 1);
+				tmpRow = tmpRow + (i + 1);
+				continue;
+				if (tmpCol < 0 || tmpCol>6 || tmpRow < 0 || tmpRow>5)//轉完後可能越界
+					break;
+
+			}
+			else {
+				break;
+			}
+		}
+		if (table[tmpRow][tmpCol] == disk && turn == false) {
+			tmp++;
+			tmpCol++;
+			tmpRow--;
+			continue;
+		}
+		if ((tmpCol == 6 || tmpRow == 0 || table[tmpRow][tmpCol] != disk) && turn == false) {
+			turn = true;
+			tmpCol = tmpCol - (i + 1);
+			tmpRow = tmpRow + (i + 1);
+			continue;
+		}
+		if (table[tmpRow][tmpRow] == disk && turn == true) {
+			tmp++;
+			tmpCol--;
+			tmpRow++;
+			continue;
+		}
+	}
+	//cout << "tmp" << tmp << endl;
+	turn = false;
+	tmpCol = col-1;
+	tmpRow = row+1;
+	//cout << "先左下再右上" << endl;;
+	for (int i = 1; i <= 3; i++) { //先左下再右上
+	//	cout << "check:(" << tmpRow << "," << tmpCol << ")" << endl;
+		if (tmpCol < 0 || tmpCol>6 || tmpRow < 0 || tmpRow>5) {
+			if (turn == false) {
+				turn = true;
+				tmpCol = tmpCol + (i + 1);
+				tmpRow = tmpRow - (i + 1);
+				if (tmpCol < 0 || tmpCol>6 || tmpRow < 0 || tmpRow>5)//轉完後可能越界
+					break;
+			}
+			else {
+				break;
+			}
+		}
+		if (table[tmpRow][tmpCol] == disk && turn == false) {
+			oppo++;
+			tmpCol--;
+			tmpRow++;
+			continue;
+		}
+		if ((tmpCol == 0 || tmpRow == 5 || table[tmpRow][tmpCol] != disk) && turn == false) {
+			turn = true;
+			tmpCol = tmpCol + (i + 1);
+			tmpRow = tmpRow - (i + 1);
+			continue;
+		}
+		if (table[tmpRow][tmpCol] == disk && turn == true) {
+			oppo++;
+			tmpCol++;
+			tmpRow--;
+			continue;
+		}
+	}
+	oppo = max(oppo, tmp);
+	//cout << "oppo:" << oppo << endl; //my=0代表只有自己
+	addScore(score, oppo, false);
+
+	//右下左上
+	oppo = 0;
+	tmp = 0;
+	turn = false;
+	tmpCol = col+1;
+	tmpRow = row+1;
+	//cout << "先右下再左上" << endl;
+	for (int i = 1; i <= 3; i++) { //先右下再左上
+//		cout << "check:(" << tmpRow << "," << tmpCol << ")" << endl;
+		if (tmpCol < 0 || tmpCol>6 || tmpRow < 0 || tmpRow>5) {
+			if (turn == false) {
+				turn = true;
+				tmpCol = tmpCol - (i + 1);
+				tmpRow = tmpRow - (i + 1);
+				if (tmpCol < 0 || tmpCol>6 || tmpRow < 0 || tmpRow>5)//轉完後可能越界
+					break;
+			}
+			else {
+				break;
+			}
+		}
+		if (table[tmpRow][tmpCol] == disk && turn == false) {
+			tmp++;
+			tmpCol++;
+			tmpRow++;
+			continue;
+		}
+		if ((tmpCol == 6 || tmpRow == 5 || table[tmpRow][tmpCol] != disk) && turn == false) {
+			turn = true;
+			tmpCol = tmpCol - (i + 1);
+			tmpRow = tmpRow - (i + 1);
+			continue;
+		}
+		if (table[row][tmpRow] == disk && turn == true) {
+			tmp++;
+			tmpCol--;
+			tmpRow--;
+			continue;
+		}
+	}
+
+	turn = false;
+	tmpCol = col-1;
+	tmpRow = row-1;
+	//cout << "先左上再右下" << endl;
+	for (int i = 1; i <= 3; i++) { //先左上再右下
+//		cout << "check:(" << tmpRow << "," << tmpCol << ")" << endl;
+		if (tmpCol < 0 || tmpCol>6 || tmpRow < 0 || tmpRow>5) {
+			if (turn == false) {
+				turn = true;
+				tmpCol = tmpCol + (i + 1);
+				tmpRow = tmpRow + (i + 1);
+				if (tmpCol < 0 || tmpCol>6 || tmpRow < 0 || tmpRow>5)//轉完後可能越界
+					break;
+			}
+			else {
+				break;
+			}
+		}
+		if (table[tmpRow][tmpCol] == disk && turn == false) {
+			oppo++;
+			tmpCol--;
+			tmpRow--;
+			continue;
+		}
+		if ((tmpCol == 0 || tmpRow == 0 || table[tmpRow][tmpCol] != disk) && turn == false) {
+			turn = true;
+			tmpCol = tmpCol + (i + 1);
+			tmpRow = tmpRow + (i + 1);
+			continue;
+		}
+		if (table[tmpRow][tmpCol] == disk && turn == true) {
+			oppo++;
+			tmpCol++;
+			tmpRow++;
+			continue;
+		}
+	}
+	oppo = max(oppo, tmp);
+	//cout << "oppo:" << oppo << endl; //my=0代表只有自己
+	addScore(score, oppo, false);
+
+	//cout << "總分" << score << endl;
+
+
+
+	return score;
+}
+int alphabeta(int node, vector < vector<char> >&table, int depth, int alpha, int beta, bool me, char disk) {//me player=1 opponent=2
+	int value = 0;
+	int best=0;
+	int tmpVal=0;
+	vector<int>valid = available(table);//找可以放的地方
+	//擺放位置即為 valid.at(node),node
+	char opponentDisk;
+	if (disk == 'O') {
+		opponentDisk = 'X';
+	}
+	else {
+	opponentDisk = 'O';
+	}
+//	cout << "me?:" << me << endl;
+//	cout << "disk:" << disk << endl;
+//	cout << "opponentDisk:" << opponentDisk << endl;
+
+
+	put(table, valid.at(node) - 1, node, disk);
+
+	/*for (int i = 0; i <= 5; i++) {
+		for (int j = 0; j <= 6; j++) {
+			if (table[i][j] == '\0') {
+				cout << 1;
+			}
+			cout << table[i][j];
 		}
 		cout << endl;
 	}
-	cout << endl;
-
-		for (unsigned i = 0; i < frequentPattern[3].size(); i += 3) {
-			for (unsigned j = 0; j < frequentPattern[1].size(); j++) {
-				//防止重複裝置 
-				//cout << j << endl;
-				//cout << frequentPattern[1].at(j) << endl;
-				if (frequentPattern[1].at(j) == frequentPattern[3].at(i) || frequentPattern[1].at(j) == frequentPattern[3].at(i + 1) || frequentPattern[1].at(j) == frequentPattern[3].at(i + 2)) {
-					//cout << "pass" << endl;
-					continue;//確保四個不重複
-				}
-				num = 0;
-				int skip = 0;
-				for (unsigned q = 0; q < tmptmp.size(); q += 4) {
-					//先暫時放著 好懶的寫
-					if (frequentPattern[3].at(i) == tmptmp.at(q) || frequentPattern[3].at(i + 1) == tmptmp.at(q) || frequentPattern[3].at(i + 2) == tmptmp.at(q) || frequentPattern[1].at(j) == tmptmp.at(q)) {
-						skip++;
-					}
-					if (frequentPattern[3].at(i) == tmptmp.at(q+1) || frequentPattern[3].at(i + 1) == tmptmp.at(q+1) || frequentPattern[3].at(i + 2) == tmptmp.at(q+1) || frequentPattern[1].at(j) == tmptmp.at(q+1)) {
-						skip++;
-					}
-					if (frequentPattern[3].at(i) == tmptmp.at(q+2) || frequentPattern[3].at(i + 1) == tmptmp.at(q+2) || frequentPattern[3].at(i + 2) == tmptmp.at(q+2) || frequentPattern[1].at(j) == tmptmp.at(q+2)) {
-						skip++;
-					}
-					if (frequentPattern[3].at(i) == tmptmp.at(q+3) || frequentPattern[3].at(i + 1) == tmptmp.at(q+3) || frequentPattern[3].at(i + 2) == tmptmp.at(q+3) || frequentPattern[1].at(j) == tmptmp.at(q+3)) {
-						skip++;
-					}
-				}
-				if (skip != 4) {
-					for (unsigned k = 0;k<buyer3[i / 3].size(); k++) {
-						for (unsigned m = 0; m< buy[buyer3[i / 3].at(k)].size(); m++) {
-							if (buy[buyer3[i / 3].at(k)].at(m) == frequentPattern[1].at(j)) {
-								num++;
-								tmpBuyer.push_back(buyer3[i / 3].at(k));
-							}
-						}
-					}
-
-					if (num >= numOfCustomer * min_supp) {
-						tmptmp.push_back(frequentPattern[3].at(i));
-						tmptmp.push_back(frequentPattern[3].at(i + 1));
-						tmptmp.push_back(frequentPattern[3].at(i + 2));
-						tmptmp.push_back(frequentPattern[1].at(j));
-						buyer4.push_back(tmpBuyer);
-						tmpBuyer.clear();
-					}
-					else {
-						tmpBuyer.clear();
-					}
-				}
-			}
-		}
-		frequentPattern.push_back(tmptmp);
-		tmptmp.clear();
-		for (unsigned i = 0; i < buyer4.size(); i++) {
-			for (unsigned j = 0; j < buyer4[i].size(); j++) {
-				cout << buyer4[i].at(j) << " ";
-			}
-			cout << endl;
-		}
-		cout << endl;
-
-		for (unsigned i = 0; i < frequentPattern[4].size(); i += 4) {
-			cout << frequentPattern[4].at(i) << ",";
-			cout << frequentPattern[4].at(i + 1) << ",";
-			cout << frequentPattern[4].at(i + 2) << ",";
-			cout << frequentPattern[4].at(i + 3) << " ";
-
-		}
-		cout << endl;
-
-		/*	尚未解決:
-			(2)測資大道會有很多rule時怎麼辦啊
-			*/
-
-	//strong association rules
-			//frequentPatterns[2]開始 frequentPatterns2.at(0) frequentPatterns2.at(1)
-		vector<string>rule1_1;
-		vector<string>rule1_2;
-		vector<string>rule2_1;
-		vector<string>rule3_1;
-		vector<string>rule1_3;
-		vector<string>rule2_2;
-		vector<string> tmpRule;
-		
-		//rule[2]
-		for (unsigned int i = 0; i < frequentPattern[2].size(); i += 2) {
-			for (unsigned j = 0; j < 2; j++) { //正反都跑
-				int denominator = count[i].size(); //A=>B  分母放A 分子放A交B
-				int numerator = buyer2[i / 2].size(); //兩次不變
-				if (numerator >= denominator * min_conf) {
-					//解法:insert到後面後 把前面erase掉
-					rule1_1.push_back(frequentPattern[2].at(i));
-					rule1_1.push_back(frequentPattern[2].at(i + 1));
-				}
-				//交換位置
-				frequentPattern[2].insert(frequentPattern[2].begin()+(i + 2), frequentPattern[2].at(i));
-				frequentPattern[2].erase(frequentPattern[2].begin() + (i));
-			}
-		}
-//		rule.push_back(tmpRule);
-//		tmpRule.clear();
-		//rule[3]
-		//1對2 2對1怎解阿
-		//1對2
-		
-		for (unsigned int i = 0; i < frequentPattern[3].size(); i += 3) {
-			for (unsigned j = 0; j < 3; j++) { //正反都跑
-				int denominator = count[i].size(); //A=>B,C  分母放A 分子放A交B
-				int numerator = buyer3[i / 3].size(); //都不會變
-				if (numerator >= denominator * min_conf) {
-					rule1_2.push_back(frequentPattern[3].at(i));
-					rule1_2.push_back(frequentPattern[3].at(i + 1));
-					rule1_2.push_back(frequentPattern[3].at(i + 2));
-				}
-				frequentPattern[3].insert(frequentPattern[3].begin() + (i + 3), frequentPattern[3].at(i));
-				frequentPattern[3].erase(frequentPattern[3].begin() + (i));
-			}
-		}
-		//2對1
-		for (unsigned int i = 0; i < frequentPattern[3].size(); i += 3) {
-			for (unsigned j = 0; j < 3; j++) { 
-				//int denominator = buyer2[j].size(); A,B=>C  不能這樣搞 因為順序不對
-				int denominator = 0;
-				for (unsigned k = 0; k < count[stoi(frequentPattern[3].at(i))].size();k++) {
-					for (unsigned m=0;m< buy[count[stoi(frequentPattern[3].at(i))].at(k)].size(); m++) {
-						if (buy[count[stoi(frequentPattern[3].at(i))].at(k)].at(m)== frequentPattern[3].at(i + 1)) {
-							denominator++;
-						}
-					}
-				}
-
-				int numerator = buyer3[i / 3].size(); //都不會變
-				if (numerator >= denominator * min_conf) {
-					rule2_1.push_back(frequentPattern[3].at(i));
-					rule2_1.push_back(frequentPattern[3].at(i + 1));
-					rule2_1.push_back(frequentPattern[3].at(i + 2));
-				}
-				frequentPattern[3].insert(frequentPattern[3].begin() + (i + 3), frequentPattern[3].at(i));
-				frequentPattern[3].erase(frequentPattern[3].begin() + (i));
-			}
-		}
-		//1對3
-		for (unsigned int i = 0; i < frequentPattern[4].size(); i += 4) {
-			for (unsigned j = 0; j < 4; j++) { //正反都跑
-				int denominator = count[i].size(); //A=>B,C  分母放A 分子放A交B
-				int numerator = buyer4[i / 4].size(); //都不會變
-				if (numerator >= denominator * min_conf) {
-					rule1_3.push_back(frequentPattern[4].at(i));
-					rule1_3.push_back(frequentPattern[4].at(i + 1));
-					rule1_3.push_back(frequentPattern[4].at(i + 2));
-					rule1_3.push_back(frequentPattern[4].at(i + 3));
-				}
-				frequentPattern[4].insert(frequentPattern[4].begin() + (i + 4), frequentPattern[4].at(i));
-				frequentPattern[4].erase(frequentPattern[4].begin() + (i));
-			}
-		}
-		//2對2
-		for (unsigned int i = 0; i < frequentPattern[4].size(); i += 4) {
-			for (unsigned j = 0; j < 4; j++) {
-				int numerator = buyer4[i / 4].size(); //都不會變
-				int denominator = 0;
-				for (unsigned k = 0; k < count[stoi(frequentPattern[4].at(i))].size(); k++) {
-					for (unsigned m = 0; m < buy[count[stoi(frequentPattern[4].at(i))].at(k)].size(); m++) {
-						if (buy[count[stoi(frequentPattern[4].at(i))].at(k)].at(m) == frequentPattern[4].at(i + 1)) {
-							denominator++;
-						}
-					}
-				}
-				if (numerator >= denominator * min_conf) {
-					rule2_2.push_back(frequentPattern[4].at(i));
-					rule2_2.push_back(frequentPattern[4].at(i + 1));
-					rule2_2.push_back(frequentPattern[4].at(i + 2));
-					rule2_2.push_back(frequentPattern[4].at(i + 3));
-				}
-				frequentPattern[4].insert(frequentPattern[4].begin() + (i + 4), frequentPattern[4].at(i));
-				frequentPattern[4].erase(frequentPattern[4].begin() + (i));
-
-			}
-		}
-		//3to1 A,B,C=>D
-		vector<int> tmpBuy;
-		for (unsigned int i = 0; i < frequentPattern[4].size(); i += 4) {
-			for (unsigned j = 0; j < 4; j++) {
-				int numerator = buyer4[i / 4].size(); //都不會變
-				int denominator = 0;
-				for (unsigned k = 0; k < count[stoi(frequentPattern[4].at(i))].size(); k++) {
-					for (unsigned m = 0; m < buy[count[stoi(frequentPattern[4].at(i))].at(k)].size(); m++) {
-						if (buy[count[stoi(frequentPattern[4].at(i))].at(k)].at(m) == frequentPattern[4].at(i + 1)) {
-							tmpBuy.push_back(count[stoi(frequentPattern[4].at(i))].at(k));
-						}
-					}
-				}
-				for (unsigned k = 0; k < tmpBuy.size(); k++) {
-					for (unsigned m = 0; m < buy[tmpBuy.at(k)].size();m++) {
-						if (buy[tmpBuy.at(k)].at(m) == frequentPattern[4].at(i + 2)) {
-							denominator++;
-						}
-					}
-				}
-				if (numerator >= denominator * min_conf) {
-					rule3_1.push_back(frequentPattern[4].at(i));
-					rule3_1.push_back(frequentPattern[4].at(i + 1));
-					rule3_1.push_back(frequentPattern[4].at(i + 2));
-					rule3_1.push_back(frequentPattern[4].at(i + 3));
-				}
-				frequentPattern[4].insert(frequentPattern[4].begin() + (i + 4), frequentPattern[4].at(i));
-				frequentPattern[4].erase(frequentPattern[4].begin() + (i));
-
-			}
-		}
-		int size = 0;
-		size += (rule1_1.size() / 2);
-		size += (rule1_2.size() / 3);
-		size += (rule2_1.size() / 3);
-		size += (rule1_3.size() / 4);
-		size += (rule2_2.size() / 4);
-		size += (rule3_1.size() / 4);
-
-
-		cout << "strong association rules" << endl;
-		out << size << endl;
-		cout << size << endl;
-		
-		if (maxProduct == 5) { //把12345換成ABCDE
-			for (unsigned i = 0; i < rule1_1.size(); i ++) {
-				if (rule1_1.at(i) == "1") {
-					rule1_1.insert(rule1_1.begin() + (i+1), "A");
-					rule1_1.erase(rule1_1.begin() + i);
-				}
-				if (rule1_1.at(i) == "2") {
-					rule1_1.insert(rule1_1.begin() + (i + 1), "B");
-					rule1_1.erase(rule1_1.begin() + i);
-				}
-				if (rule1_1.at(i) == "3") {
-					rule1_1.insert(rule1_1.begin() + (i + 1), "C");
-					rule1_1.erase(rule1_1.begin() + i);
-				}
-				if (rule1_1.at(i) == "4") {
-					rule1_1.insert(rule1_1.begin() + (i + 1), "D");
-					rule1_1.erase(rule1_1.begin() + i);
-				}
-				if (rule1_1.at(i) == "5") {
-					rule1_1.insert(rule1_1.begin() + (i + 1), "E");
-					rule1_1.erase(rule1_1.begin() + i);
-				}
-			}
-			for (unsigned i = 0; i < rule1_2.size(); i ++) {
-				if (rule1_2.at(i) == "1") {
-					rule1_2.insert(rule1_2.begin() + (i+1), "A");
-					rule1_2.erase(rule1_2.begin() + i);
-				}
-				if (rule1_2.at(i) == "2") {
-					rule1_2.insert(rule1_2.begin() + (i + 1), "B");
-					rule1_2.erase(rule1_2.begin() + i);
-				}
-				if (rule1_2.at(i) == "3") {
-					rule1_2.insert(rule1_2.begin() + (i + 1), "C");
-					rule1_2.erase(rule1_2.begin() + i);
-				}
-				if (rule1_2.at(i) == "4") {
-					rule1_2.insert(rule1_2.begin() + (i + 1), "D");
-					rule1_2.erase(rule1_2.begin() + i);
-				}
-				if (rule1_2.at(i) == "5") {
-					rule1_2.insert(rule1_2.begin() + (i + 1), "E");
-					rule1_2.erase(rule1_2.begin() + i);
-				}
-			}
-			//2_1
-			for (unsigned i = 0; i < rule2_1.size(); i++) {
-				if (rule2_1.at(i) == "1") {
-					rule2_1.insert(rule2_1.begin() + (i + 1), "A");
-					rule2_1.erase(rule2_1.begin() + i);
-				}
-				if (rule2_1.at(i) == "2") {
-					rule2_1.insert(rule2_1.begin() + (i + 1), "B");
-					rule2_1.erase(rule2_1.begin() + i);
-				}
-				if (rule2_1.at(i) == "3") {
-					rule2_1.insert(rule2_1.begin() + (i + 1), "C");
-					rule2_1.erase(rule2_1.begin() + i);
-				}
-				if (rule2_1.at(i) == "4") {
-					rule2_1.insert(rule2_1.begin() + (i + 1), "D");
-					rule2_1.erase(rule2_1.begin() + i);
-				}
-				if (rule2_1.at(i) == "5") {
-					rule2_1.insert(rule2_1.begin() + (i + 1), "E");
-					rule2_1.erase(rule2_1.begin() + i);
-				}
-			}
-			//1-3
-			for (unsigned i = 0; i < rule1_3.size(); i++) {
-				if (rule1_3.at(i) == "1") {
-					rule1_3.insert(rule1_3.begin() + (i + 1), "A");
-					rule1_3.erase(rule1_3.begin() + i);
-				}
-				if (rule1_3.at(i) == "2") {
-					rule1_3.insert(rule1_3.begin() + (i + 1), "B");
-					rule1_3.erase(rule1_3.begin() + i);
-				}
-				if (rule1_3.at(i) == "3") {
-					rule1_3.insert(rule1_3.begin() + (i + 1), "C");
-					rule1_3.erase(rule1_3.begin() + i);
-				}
-				if (rule1_3.at(i) == "4") {
-					rule1_3.insert(rule1_3.begin() + (i + 1), "D");
-					rule1_3.erase(rule1_3.begin() + i);
-				}
-				if (rule1_3.at(i) == "5") {
-					rule1_3.insert(rule1_3.begin() + (i + 1), "E");
-					rule1_3.erase(rule1_3.begin() + i);
-				}
-			}
-			//2-2
-			for (unsigned i = 0; i < rule2_2.size(); i++) {
-				if (rule2_2.at(i) == "1") {
-					rule2_2.insert(rule2_2.begin() + (i + 1), "A");
-					rule2_2.erase(rule2_2.begin() + i);
-				}
-				if (rule2_2.at(i) == "2") {
-					rule2_2.insert(rule2_2.begin() + (i + 1), "B");
-					rule2_2.erase(rule2_2.begin() + i);
-				}
-				if (rule2_2.at(i) == "3") {
-					rule2_2.insert(rule2_2.begin() + (i + 1), "C");
-					rule2_2.erase(rule2_2.begin() + i);
-				}
-				if (rule2_2.at(i) == "4") {
-					rule2_2.insert(rule2_2.begin() + (i + 1), "D");
-					rule2_2.erase(rule2_2.begin() + i);
-				}
-				if (rule2_2.at(i) == "5") {
-					rule2_2.insert(rule2_2.begin() + (i + 1), "E");
-					rule2_2.erase(rule2_2.begin() + i);
-				}
-			}
-
-			//3-1
-			for (unsigned i = 0; i < rule3_1.size(); i++) {
-				if (rule3_1.at(i) == "1") {
-					rule3_1.insert(rule3_1.begin() + (i + 1), "A");
-					rule3_1.erase(rule3_1.begin() + i);
-				}
-				if (rule3_1.at(i) == "2") {
-					rule3_1.insert(rule3_1.begin() + (i + 1), "B");
-					rule3_1.erase(rule3_1.begin() + i);
-				}
-				if (rule3_1.at(i) == "3") {
-					rule3_1.insert(rule3_1.begin() + (i + 1), "C");
-					rule3_1.erase(rule3_1.begin() + i);
-				}
-				if (rule3_1.at(i) == "4") {
-					rule3_1.insert(rule3_1.begin() + (i + 1), "D");
-					rule3_1.erase(rule3_1.begin() + i);
-				}
-				if (rule3_1.at(i) == "5") {
-					rule3_1.insert(rule3_1.begin() + (i + 1), "E");
-					rule3_1.erase(rule3_1.begin() + i);
-				}
-			}
-		}
-		if (ABCexist == true) {
-			for (unsigned i = 0; i < rule1_1.size(); i++) {
-				if (rule1_1.at(i) == "0") {
-					rule1_1.insert(rule1_1.begin() + (i + 1), "ABC");
-					rule1_1.erase(rule1_1.begin() + i);
-				}
-			}
-			for (unsigned i = 0; i < rule1_2.size(); i++) {
-				if (rule1_2.at(i) == "0") {
-					rule1_2.insert(rule1_2.begin() + (i + 1), "ABC");
-					rule1_2.erase(rule1_2.begin() + i);
-				}
-			}
-			for (unsigned i = 0; i < rule2_1.size(); i++) {
-				if (rule2_1.at(i) == "0") {
-					rule2_1.insert(rule2_1.begin() + (i + 1), "ABC");
-					rule2_1.erase(rule2_1.begin() + i);
-				}
-			}
-			for (unsigned i = 0; i < rule1_3.size(); i++) {
-				if (rule1_3.at(i) == "0") {
-					rule1_3.insert(rule1_3.begin() + (i + 1), "ABC");
-					rule1_3.erase(rule1_3.begin() + i);
-				}
-			}
-			for (unsigned i = 0; i < rule2_2.size(); i++) {
-				if (rule2_2.at(i) == "0") {
-					rule2_2.insert(rule2_2.begin() + (i + 1), "ABC");
-					rule2_2.erase(rule2_2.begin() + i);
-				}
-			}
-			for (unsigned i = 0; i < rule3_1.size(); i++) {
-				if (rule3_1.at(i) == "0") {
-					rule3_1.insert(rule3_1.begin() + (i + 1), "ABC");
-					rule3_1.erase(rule3_1.begin() + i);
-				}
-			}
-
-		}
-
-
-		for (unsigned i = 0; i < rule1_1.size(); i+=2) {
-			cout << rule1_1.at(i) << "=>" << rule1_1.at(i + 1) << endl;
-			out<< rule1_1.at(i) << "=>" << rule1_1.at(i + 1) << endl;
-		}
-		for (unsigned i = 0; i < rule1_2.size(); i+=3) {
-			cout << rule1_2.at(i) << "=>{" << rule1_2.at(i + 1) <<"," << rule1_2.at(i + 2) <<"}"<< endl;
-			out<< rule1_2.at(i) << "=>{" << rule1_2.at(i + 1) << "," << rule1_2.at(i + 2) << "}" << endl;
-		}
-		for (unsigned i = 0; i < rule2_1.size(); i += 3) {
-			cout <<"{"<<rule2_1.at(i) << "," << rule2_1.at(i + 1) << "}=>" << rule2_1.at(i + 2)<< endl;
-			out<< "{" << rule2_1.at(i) << "," << rule2_1.at(i + 1) << "}=>" << rule2_1.at(i + 2) << endl;
-		}
-		//四個一組
-		for (unsigned i = 0; i < rule1_3.size(); i += 4) {
-			cout << rule1_3.at(i) << "=>{" << rule1_3.at(i + 1) << "," << rule1_3.at(i + 2) <<","<< rule1_3.at(i + 3)<< "}" << endl;
-			out<< rule1_3.at(i) << "=>{" << rule1_3.at(i + 1) << "," << rule1_3.at(i + 2) << "," << rule1_3.at(i + 3) << "}" << endl;
-		}
-		for (unsigned i = 0; i < rule2_2.size(); i += 4) {
-			cout << "{" << rule2_2.at(i) << "," << rule2_2.at(i + 1) << "}=>{" << rule2_2.at(i + 2) << "," << rule2_2.at(i + 3) <<"}"<< endl;
-			out<< "{" << rule2_2.at(i) << "," << rule2_2.at(i + 1) << "}=>{" << rule2_2.at(i + 2) << "," << rule2_2.at(i + 3) << "}" << endl;
-		}
-		for (unsigned i = 0; i < rule3_1.size(); i += 4) {
-			cout << "{" << rule2_2.at(i) << "," << rule2_2.at(i + 1) <<","<< rule2_2.at(i + 2) << "}=>"<< rule2_2.at(i + 3) << endl;
-			out<< "{" << rule2_2.at(i) << "," << rule2_2.at(i + 1) << "," << rule2_2.at(i + 2) << "}=>" << rule2_2.at(i + 3) << endl;
-		}
-
-
-		return 0;
+	cout << "印完拉" << endl;*/
+	
+	if (depth == 0) {
+		value= heuristic(table, valid.at(node)-1, node, disk);
+		remove(table, valid.at(node)-1, node);
+		cout << value << endl;
+		return value; //回傳他該有的分數
 	}
+	//Alpha is the maximum lower bound of possible solutions
+	//Beta is the minimum upper bound of possible solutions
+	int Row = valid.at(node) - 1;
+	if (me) {
+		value = -100000;
+		for (int i = 0; i <= 6; i++) {
+		//	cout << "i:" << i << endl;
+			tmpVal = alphabeta(i, table, depth - 1, alpha, beta, false, opponentDisk);
+			if (value < tmpVal) {
+				value = tmpVal;
+				best = i;
+			}
+			alpha = max(alpha, value); //若有比alpha大的可能就要替換 相對小於alpha的就可以無視
+			cout << "alpha:" << alpha << " beta:" << beta <<"depth"<<depth<< endl;
+			//第二round爆掉了 應該要把x拿掉 然後放到下一row
+			if (alpha >= beta) {
+				cout << "alpha>=beta" << endl;
+				break;
+			}
+		}
+		if (depth != 0) {
+			//vector<int>valid = available(table);
+			remove(table, Row, node);
+		}
+		if (depth != 2) {
+			return value;
+		}
+	}
+	else {
+		value = 100000; //找對手極小
+		//for each child of node
+		for (int i = 0; i <= 6; i++) {
+			value = min(value, alphabeta(i, table, depth - 1, alpha, beta, true, opponentDisk));
+			beta = min(beta, value);
+			cout << "alpha:" << alpha << " beta:" << beta << endl;
+			if (beta <= alpha) {
+				cout << "beta <= alpha" << endl;
+				vector<int>valid = available(table);
+				//remove(table, Row, node);
+				//remove(table, valid.at(node) - 1, node);
+				break;
+			}
+		}
+		if (depth != 0) {
+			vector<int>valid = available(table);
+			remove(table, Row, node);
+		}
+		if (depth != 2) {
+			return value;
+		}
+	}
+	cout << best << endl;
+	return best;
+}
+
+void addScore(int & score, int num, bool me) {
+	if (me) {
+		switch (num) {
+			case 1:
+				score += 10;
+				break;
+			case 2:
+				score += 100;
+				break;
+			case 3:
+				score += 1000;
+				break;
+		}
+	}
+	else {
+		switch (num) {
+		case 1:
+			score -= 11;
+			break;
+		case 2:
+			score -= 101;
+			break;
+		case 3:
+			score -= 1001;
+			break;
+		}
+	}
+	//cout << "score" << score << endl;
+
+}
